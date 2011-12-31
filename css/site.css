@@ -1,0 +1,113 @@
+body {
+	font-family: Arial, Helvetica, Sans;
+	margin: 0;
+	padding: 0;
+	background-color: #322419;
+	color: #E7E0C7;
+}
+
+h1, h1 a {
+	font-family: "Arial Black", Arial, Helvetica, Sans;
+	font-variant: small-caps;
+	color: white;
+	display: inline-block;
+	text-decoration: none;
+	margin-left: 1em;
+}
+
+h2 {
+	font-family: "Share", "Arial Narrow", Arial, Sans;
+	font-weight: normal;
+	border-left: 1px solid #BE7762;
+	padding: .6em 0 .6em .8em;
+	margin-left: 1em;
+	color: #E9E2C9;
+	display: inline-block;
+}
+
+#site {
+	width: 100%;
+}
+
+#header {
+	background: transparent url('../images/header.jpg');
+}
+#main-wrap1 {
+	border-top: 1px solid white;
+	background: transparent url('../images/background.jpg');
+}
+
+#main-wrap2 {
+	border-top: 1px solid white;
+	background: transparent url('../images/background-top.jpg') repeat-x;
+}
+
+#main {
+	color: black;
+}
+
+#sidebar {
+	float: right;
+	display: block;
+	padding: 1em;
+}
+
+.sidebar-box {
+	padding-bottom: 1em;
+}
+
+.sidebar-box-header-wrap1 {
+	background: transparent url('../images/box-title-bg.png') no-repeat 35px 0;
+}
+.sidebar-box-header-wrap2{
+	background: transparent url('../images/box-title-left.png') no-repeat;
+	min-height: 35px;
+}
+
+.sidebar-box-header {
+	padding-left: 35px;
+	padding-top: 0.3em;
+	padding-bottom: 0.3em;
+	margin: 0 2em 0 2em;
+	text-align: center;
+	font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, Sans, FreeSans, Jamrul, Garuda, Kalimati;
+	font-weight: normal;
+	text-transform: uppercase;
+	color: white;
+}
+
+.sidebar-box-content {
+	padding: 0.5em;
+	background-color: #f5f1e5;
+}
+
+.sidebar-box-content a {
+	color: black;
+	text-decoration: none;
+}
+
+.sidebar-box-content a:hover {
+	color: gray;
+	text-decoration: underline;
+}
+
+#content {
+	display: block;
+}
+
+#clear {
+	clear: both;
+	display: block;
+}
+
+#footer {
+	font-family: "Lucida Grande", "Lucida Sans Unicode", Calibri, Arial, Helvetica, Sans, FreeSans, Jamrul, Garuda, Kalimati;
+	font-size: 0.7em;
+	text-align: center;
+	border-top: 1px solid #664933;
+	padding-top: 1em;
+}
+
+#footer a {
+	color: #E7E0C7;
+}

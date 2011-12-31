@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>{{ page.title }}</title>
+   <meta name="author" content="Jason Dentler" />
+   <link rel="stylesheet" href="/css/site.css" type="text/css" />
+</head>
+<body>
+
+
+<div id="site">
+	<div id="header">
+		<h1><a href="/">JasonDentler.com</a></h1>
+		<h2>I'm just here for the code</h2>
+	</div>
+	<div id="main-wrap1">
+		<div id="main-wrap2">
+			<div id="main">
+				<div id="sidebar">
+					{% include sidebar.html %}
+				</div>
+				<div id="content">
+					{{ content }}
+				</div>
+				<div id="clear"></div>
+			</div>
+		</div>
+	</div>
+	<div id="footer">
+		{% include license.html %}
+	</div>
+</div>
+
+</body>
+</html>
