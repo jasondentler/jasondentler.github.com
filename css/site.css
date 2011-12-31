@@ -1,3 +1,7 @@
+a img {
+	border: none; /* Fucking IE */
+}
+
 body {
 	font-family: Arial, Helvetica, Sans;
 	margin: 0;
