@@ -50,10 +50,21 @@ h2 {
 	color: black;
 }
 
+#contentwrapper {
+	float: left;
+	padding: 0;
+	margin: 0;
+}
+
+#content {
+	margin-right: 300px;
+}
+
 #sidebar {
-	float: right;
-	display: block;
-	padding: 1em;
+	width: 300px;
+	float: left;
+	color: black;
+	margin-left: -300px;
 }
 
 .sidebar-box {
@@ -80,13 +91,8 @@ h2 {
 	text-decoration: underline;
 }
 
-#content {
-	display: block;
-}
-
 #clear {
 	clear: both;
-	display: block;
 }
 
 #footer {
@@ -130,4 +136,14 @@ h2 {
 	width: 16px;
 	height: 16px;
 	verticle-align: baseline;
+}
+
+#post {
+	margin: 1em;
+	padding: 1em;
+	border: 1px solid gray;
+	background-color: white;
+}
+#related {
+	margin: 2em;
 }
