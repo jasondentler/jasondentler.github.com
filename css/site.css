@@ -139,11 +139,49 @@ h2 {
 }
 
 #post {
-	margin: 1em;
+	margin: 1em 1em 1em 4em;
 	padding: 1em;
 	border: 1px solid gray;
 	background-color: white;
 }
+
+.post-date {
+	float: left;
+	margin: 0 0 0 -3em;
+}
+
+.datebox
+{
+	border: 1px solid #000000;
+	color: #ffffff;
+	width: 40px;
+}
+
+.datebox span {
+	display: block;
+	text-align: center;
+	text-transform: uppercase;
+	padding: 2px;
+	width: 36px;
+}
+
+.datebox .month
+{
+	font-size: 0.7em;
+	background-color: #1e528c;
+}
+.datebox .day
+{
+	font-size: 1em;
+	font-weight: bold;
+	background-color: #2c7ad0;
+}
+.datebox .year
+{
+	font-size: 0.7em;
+	background-color: #1e528c;
+}
+
 #related {
 	margin: 2em;
 }
