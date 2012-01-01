@@ -10,12 +10,13 @@ layout: default
 		</div>
 	</div>
 	<h3>{{ page.title }}</h3>
+	{% include prevnext.html %}
 	<div id="post-content">
 		{{ content }}
 	</div>
 	<div class="clear"></div>
+	{% include prevnext.html %}
 	{% include socialmedia_post.html %}
-	{% include relatedposts_post.html %}
 	{% include disqus_post.html %}
 
 </div>
