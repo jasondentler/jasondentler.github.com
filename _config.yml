@@ -2,3 +2,4 @@ safe: true
 lsi: false
 pygments: true
 exclude: rakefile.rb, README.md
+permalink: /blog/:year/:month/:day/:title.html

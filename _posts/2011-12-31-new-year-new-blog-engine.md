@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "New Year, New Blog Engine"
-exerpt: "Jekyll rocks. Seriously. It renders markdown and liquid templates down to static html files. What's not to like?"
+excerpt: "Jekyll rocks. Seriously. It renders markdown and liquid templates down to static html files. What's not to like?"
 ---
 Jekyll rocks. Seriously. It renders markdown and liquid templates down to static html files. What's not to like?
 
