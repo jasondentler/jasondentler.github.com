@@ -159,6 +159,8 @@ h3 a:hover {
 	padding: 0.4em 1em 1em 1em;
 	border: 1px solid gray;
 	background-color: white;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
 }
 
 .post-date {
@@ -173,6 +175,8 @@ h3 a:hover {
 .datebox
 {
 	border: 1px solid #000000;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
 	color: #ffffff;
 	width: 40px;
 }
