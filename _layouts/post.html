@@ -1,6 +1,8 @@
 ---
 layout: default
 ---
+
+{% include prevnext.html %}
 <div id="post">
 	<div class="post-date">
 		<div class="datebox">
@@ -10,13 +12,11 @@ layout: default
 		</div>
 	</div>
 	<h3>{{ page.title }}</h3>
-	{% include prevnext.html %}
 	<div id="post-content">
 		{{ content }}
 	</div>
 	<div class="clear"></div>
-	{% include prevnext.html %}
-	{% include socialmedia_post.html %}
-	{% include disqus_post.html %}
-
 </div>
+{% include socialmedia_post.html %}
+{% include prevnext.html %}
+{% include disqus_post.html %}
