@@ -106,7 +106,7 @@ h3 a:hover {
 	text-decoration: underline;
 }
 
-#clear {
+.clear {
 	clear: both;
 }
 
@@ -199,6 +199,10 @@ h3 a:hover {
 {
 	font-size: 0.7em;
 	background-color: #1e528c;
+}
+
+#post-content {
+	padding-bottom: 1em;
 }
 
 #related {

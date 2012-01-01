@@ -3,6 +3,8 @@ task :publish => [:githubpublish]
 
 desc "Run Jekyll"
 task :jekyll do
+	puts "Changing codepage for windows"
+	sh 'chcp 65001'
 	puts "Running Jekyll"
 	jekyll
 	puts "Publishing to local IIS"

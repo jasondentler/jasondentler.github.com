@@ -20,7 +20,8 @@
 	</span>
 	<script type="text/javascript">
 	$(function () {
-		$('#toggle-comments').click(function () {
+		$('#toggle-comments').click(function (e) {
+			e.preventDefault();
 			if ($('#comments').is(':visible')) {
 				$('#comments').hide();
 				$('#toggle-comments').html('Show Comments');
@@ -28,6 +29,7 @@
 				$('#comments').show();
 				$('#toggle-comments').html('Hide Comments');
 			}
+			return false;
 		});
 		$('#toggle-comments').click();
 	});

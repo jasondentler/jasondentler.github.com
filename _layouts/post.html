@@ -6,12 +6,16 @@ layout: default
 		<div class="datebox">
 			<span class="month">{{ page.date | date : "%b" }}</span>
 			<span class="day">{{ page.date | date : "%d" }}</span>
-			{% if page.date.year != Time.new.year %}
 			<span class="year">{{ page.date | date : "%Y" }}</span>
-			{% endif %}
 		</div>
 	</div>
 	<h3>{{ page.title }}</h3>
-	{{ content }}
+	<div id="post-content">
+		{{ content }}
+	</div>
+	<div class="clear"></div>
+	{% include socialmedia_post.html %}
+	{% include relatedposts_post.html %}
+	{% include disqus_post.html %}
 
 </div>
