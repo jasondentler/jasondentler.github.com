@@ -141,15 +141,16 @@ h3 a:hover {
 }
 
 .follow-button {
+	padding: 2px;
 	display: inline-block;
 }
 .follow-button span{
-	margin: 3px;
 	verticle-align: middle;
 }
 .follow-button img {
 	width: 16px;
 	height: 16px;
+	padding-right: 0.3em;
 	verticle-align: baseline;
 }
 
@@ -241,4 +242,8 @@ h3 a:hover {
 .prevnext a:hover { 
 	color: gray;
 	text-decoration: underline;
+}
+
+#dsq-pagination {
+	display: none;
 }
