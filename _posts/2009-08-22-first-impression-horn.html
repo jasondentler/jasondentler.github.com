@@ -1,0 +1,27 @@
+--- 
+layout: post
+title: "First Impression: Horn"
+tags: []
+
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<p>Horn is an open source project used to build other often-interdependent open source projects, such as <a href="http://nhforge.org" target="_blank">NHibernate</a>, Fluent NHibernate, NHContrib, the Castle suite of projects, MVCContrib, Rhino Tools, and Ninject. </p>  <p>This solves a couple of very common problems when working with the average ALT.NET stack. </p>  <ul>   <li>The dependency tree of the ALT.NET stack is a wind-whipped, gnarled, stunted cedar growing out of the side of a rock cliff. It twists and turns back on itself. It would be a monumental task to grab the correct version of all of these, whether that’s the latest trunk or a stable release, sort out the dependencies, and build them all by hand. </li>    <li>The precompiled releases of these projects don’t necessarily correspond to each other. NHContrib Validator might depend on a recent nightly build of NH while FNH v1 RC might depend on NH 2.1 GA. </li>    <li>Many of these projects have multi-step build processes. It’s not just a simple “F5” build. There may be codegen tasks, unit tests, assembly signing or any number of oddities. </li> </ul>  <p>When I published the first part of my series about setting up the solution, there was an issue where the assembly for <a href="http://ninject.org/" target="_blank">Ninject</a>’s ASP.NET MVC integration was only available from the trunk. I posted in the comments that the readers could either wait for me to post the source, including all the 3rd party libraries, or they could grab the source from the trunk and build it themselves. </p>  <p>The next day, I got a series of tweets from <a href="http://devlicio.us/blogs/tuna_toksoz" target="_blank">Tuna</a> (<a href="http://www.twitter.com/tehlike" target="_blank">@tehlike</a>) and <a href="http://www.twitter.com/dagda1" target="_blank">@dagda1</a> about <a href="http://groups.google.co.uk/group/horn-development" target="_blank">Horn</a>, so I read up on it. It looked cool, but I had just spent the afternoon updating everything and writing about it, so I was a bit burned out. Now that it’s been two weeks, there are a couple of projects in the stack that need to be updated. FNH released v1 RC (Congratulations James!) and Ninject and MVCContrib also have some updates. </p>  <p>I also have two medium sized web apps at work that should be updated to the latest and greatest when we move them from a VPC to a physical server next month. I’m hoping Horn will save me from .NET’s version of DLL HELL. </p>  <p>If you want more info, check out the <a href="http://groups.google.co.uk/group/horn-development" target="_blank">discussion group</a>, or just grab the <a href="http://code.google.com/p/hornget/" target="_blank">source code</a>. Horn even has its own <a href="http://code.google.com/p/horn-contrib/" target="_blank">contrib project</a>. </p>  <p>Here are my thoughts:</p>  <p>Very first impression – It’s an awesome idea, but it needs a lot more SEO. To find it, I had to search in Google code. Hopefully, this post will help with that. If you’ve got a blog (and you should) and you use Horn, write about it. It deserves great press.</p>  <p>I grabbed the latest source from their Google Code SVN. In the /src directory, there’s a hornbuild.bat. I fired up a command prompt, changed directories and ran it. 20 seconds later, I had it - /src/build/net-3.5/debug/horn.exe. </p>  <p>From there, I started grabbing everything I needed</p>  <pre>horn –install:fluentnhibernate
+horn -install:ninject
+horn -install:mvccontrib</pre>
+
+<p>Well, that’s what I had planned. I got a BadImageException on SharpSvn when trying to grab FNH. After trying a few things on my own, I tweeted for help. <a href="http://devlicio.us/blogs/tuna_toksoz" target="_blank">Tuna</a>, who I’ve decided is either stalking me or involved in every .NET open source project out there, suggested checking the assemblies with the corflags utility. If you’re new to corflags, like I was, it’s in C:Program FilesMicrosoft SDKsWindowsv6.0ABin and part of the Windows SDK. As it turns out, horn.exe and horn.core.dll in my particular build were not marked as 32-bit. I marked them both as 32-bit with these commands:</p>
+
+<pre>corflags horn.exe /32BIT+
+corflags horn.core.dll /32BIT+</pre>
+
+<p>I tried it again. Success! It started by grabbing the castle project, then built it. Then it moved on the NHibernate, and finally Fluent NHibernate. </p>
+
+<p>In the end, the only project out of the three that didn’t work 100% was Ninject. The build for it’s monorail integration had an issue signing the assembly. Since I’m not using monorail, much less Ninject’s monorail integration, I commented that out of the .build file and tried it again. It worked perfectly.</p>
+
+<p>Horn is still a little rough around the edges. For example, when a build fails, horn crashes out to windows error reporting. Even with those issues, it has saved me a lot of time. It’s a great idea and even at this early stage, it’s an amazing tool.</p>
+
+<p>Thanks again to Tuna for answering my stupid questions.</p>

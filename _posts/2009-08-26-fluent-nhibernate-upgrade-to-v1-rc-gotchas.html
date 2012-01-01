@@ -1,0 +1,12 @@
+--- 
+layout: post
+title: Fluent NHibernate upgrade to v1 RC gotchas
+tags: 
+- Fluent NHibernate
+status: publish
+type: post
+published: true
+meta: {}
+
+---
+<p>In a project I’m doing at work, I have a rather large table-per-subclass hierarchy. When I upgraded the reference to Fluent NHibernate v1 RC, it immediately broke. This was expected. Many of the mapping method names have been shortened. For example, WithLengthOf is now just Length. ColumnName is now just Column. I think this is great. </p>  <p>One thing I wasn’t expecting was the change in JoinedSubclass. The method is deprecated. It still works –mostly. Since the issues this causes are pretty obscure, I’m trying to get the word out to save someone else the same headaches. Isn’t that what a programming blog is really about? I mean, besides all that other stuff like fame and riches.</p>  <p>There are two issues:</p>  <ol>   <li>The newly deprecated JoinedSubclass ignores mappings without mapped properties. This was an issue for me since I had two mapped classes that inherited all of their properties from the base class but implemented their own behavior. After the upgrade, neither of these were included in my mapping. To correct this, upgrade to SubclassMap – everywhere (see #2). </li>    <li>You cannot mix JoinedSubclass with the new SubclassMap in the same <a href="http://nhforge.org" target="_blank">NHibernate</a> configuration. JoinedSubclass messes up some internal state with SubclassMap. If you use both, you will get an incomplete configuration exception with a null reference exception inside. </li> </ol>  <p>#2 was especially bad for me because I assumed the exception was because I was using SubclassMap incorrectly. I rolled back my code twice before deciding just to go for it. When I replaced my last JoinedSubclass it all magically started working. </p>

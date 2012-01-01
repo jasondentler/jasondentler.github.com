@@ -1,0 +1,300 @@
+--- 
+layout: post
+title: Generate Audit Triggers From NHibernate
+tags: 
+- MS SQL Server
+- NHibernate
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<p>Last week, <a href="http://fabiomaulo.blogspot.com/" target="_blank">Fabio</a> was showing me the <a href="http://martinfowler.com/eaaDev/ParallelModel.html" target="_blank">Parallel Models</a> pattern and explaining some of the work he’s doing with it. It is a VERY powerful concept.</p>  <p>What I’m going to show you today is the poor-mans version. It certainly doesn’t qualify as parallel model, but it’s pretty good audit logging if you meet the prerequisites.</p>  <h4>The Problem</h4>  <p>You need some audit logs for your current application, but you’re behind. In fact, you started the project already a month behind schedule. This needs to be quick and reliable. It’d be great if it didn’t intrude on the application, because you’ve got enough rattling around in your head already.</p>  <p>It sounds like you want SQL trigger audit logging. By the way, let’s say you’re using MS SQL Server. Let’s also say your application impersonates the user all the way down to the database level. That means your connection string says integrated security=SSPI or your dba enjoys the extra work of maintaining a sql login for each user. Those are prerequisites for this approach.</p>  <h4>What’s a trigger?</h4>  <blockquote>   <p>A trigger is a special kind of stored procedure that automatically executes when an event occurs in the database server.      <br />- <a href="http://msdn.microsoft.com/en-us/library/ms189799.aspx" target="_blank">CREATE TRIGGER, MSDN</a></p> </blockquote>  <p>If tables are the data structures in your database and stored procedures are the methods, then triggers are the event handlers. We’re concerned with three specific events – INSERT, UPDATE, and DELETE. We want to log each time those events happen to rows in our tables.</p>  <p>Trigger auditing has been around since at least the 1990s – since before SQL Server was even worth a damn. That’s MSSQL 6.5 folks. It’s sturdy and well-proven, although poorly implemented triggers will bring your server to a screeching halt. Fair warning – mine may be one of them.</p>  <p>We want to know what the data was before the change, what the data is now, who changed it, and when.</p>  <p>When you insert records in a table, the insert trigger for that table executes. The same goes for update and delete.</p>  <p>Triggers have two imaginary tables to help us with this task – inserted and deleted. Inside a trigger, <a href="http://msdn.microsoft.com/en-us/library/ms191300.aspx" target="_blank">they mostly work like real tables</a>. Inserted always has the new data. Deleted always has the old data (from before the change.) So, in the case of an INSERT trigger, deleted is empty. For a DELETE trigger, inserted is always empty, since there is no new data with a deletion. For an UPDATE trigger, they both have data.</p>  <p>How does this help us? Well, suppose we have want to audit a table called Person. Let’s make a table called Audit_Person with the exact same columns as Person. When we delete data from Person, our DELETE trigger on Person will run. Inside our trigger, the deleted table has all of the rows that were just deleted from Person. We can copy that data to our audit table so we have a record of it by doing INSERT INTO Audit_Person SELECT * FROM deleted. Since the columns match up exactly, it works.</p>  <p>Wait a minute though. We need to know who deleted that data and when. Oh, and we need some way to indicate the different events.</p>  <p>Lucky for us, there’s some easy functions in SQL. system_user will give us the login of the current user – either a sql account name or a windows account name. Of course, GetDate() will tell us the current time and we’ll just write that to the table.</p>  <p>Let’s go ahead and write out a full trigger.</p>  <pre class="brush:sql">CREATE TRIGGER Person_onInsert ON Person FOR INSERT AS 
+SET NOCOUNT ON
+INSERT INTO Audit_Person SELECT *, system_user, getdate(), 'I' FROM Inserted</pre>
+
+<p>Oh yeah, we need to add some fields in Audit_Person to hold the extra stuff. system_user is a custom sql type called sysname. It’s really nvarchar(256). Of course, getdate() is a datetime. Finally, we’re passing a capital letter I (for Inserted) as the last field, so we’ll need to make that a char(1) type. </p>
+
+<p>The SET NOCOUNT ON command is there to suppress the extra (X rows affected) messages that SQL spits out. You’ll know what I’m talking about if you’ve ever clicked on the Messages tab after running a query. </p>
+
+<p>So, that’s the audit logging. Now we just need to create an audit table and 3 triggers for each table in your application.</p>
+
+<h4>What does that get us?</h4>
+
+<p>Suppose we set up the audit table and all 3 triggers, then ran these 5 SQL commands:</p>
+
+<pre class="brush:sql">INSERT INTO [Person] VALUES (NEWID(), 'Jason 1')
+INSERT INTO [Person] VALUES (NEWID(), 'Jason 2')
+INSERT INTO [Person] VALUES (NEWID(), 'Jason 3')
+UPDATE Person SET Name = 'Jason 4'
+DELETE FROM Person </pre>
+
+<p>Our Audit_Person table would have these rows: (click the picture for 100% size)</p>
+
+<p><a href="http://jasondentler.com/blog/wp-content/uploads/2009/12/image3.png" target="_blank"><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="image" border="0" alt="image" src="http://jasondentler.com/blog/wp-content/uploads/2009/12/image_thumb3.png" width="554" height="156" /></a></p>
+
+<p>&#160;</p>
+
+<h4>Being Lazy</h4>
+
+<p>You’ve got 200 tables? Well, you’d better get to typing then. </p>
+
+<p></p>
+
+<p>OK. Just like you can generate a SQL script using <a href="http://nhforge.org" target="_blank">NHibernate</a>.Tool.hbm2ddl.SchemaExport, we can generate a script to build our audit tables and triggers from the mappings.</p>
+
+<p>Now, we’re not going to parse out the XML in the hbm files. We’re going to read the proposed table schema – what SchemaExport will give you – directly from the NHibernate configuration object. This is the same way SchemaExport does it’s magic.</p>
+
+<p>Here’s the code:</p>
+
+<pre class="brush:csharp">using System.IO;
+using NHibernate.Cfg;
+using NHibernate.Mapping;
+using NHibernate.AdoNet.Util;
+
+namespace AuditLogExample
+{
+
+    public class AuditScripter
+    {
+
+        public const string USER_DEFAULT = &quot;system_user&quot;;
+        public const string TIMESTAMP_DEFAULT = &quot;getdate()&quot;;
+
+        private enum Operations
+        {
+            Insert,
+            Update,
+            Delete
+        }
+
+        public AuditScripter(Configuration Configuration)
+        {
+            cfg = Configuration;
+            mapping = cfg.BuildMapping();
+            dialect = NHibernate.Dialect.Dialect.GetDialect(cfg.Properties);
+            formatter = (NHibernate.Util.PropertiesHelper.GetBoolean(NHibernate.Cfg.Environment.FormatSql, cfg.Properties, true) ? FormatStyle.Ddl : FormatStyle.None).Formatter;
+        }
+
+        private readonly NHibernate.Dialect.Dialect dialect;
+        private readonly Configuration cfg;
+        private readonly NHibernate.Engine.IMapping mapping;
+        private readonly IFormatter formatter;
+
+        public void Execute(System.IO.TextWriter script)
+        {
+            var mappings = cfg.CreateMappings(dialect);
+            ScriptObjectsForTables(mappings, script);
+        }
+
+        private void ScriptObjectsForTables(Mappings mappings, TextWriter script)
+        {
+            var tables = mappings.IterateTables;
+            var auditTableBuilder = new AuditTableBuilder();
+            foreach (Table table in tables)
+            {
+                if (table.IsPhysicalTable)
+                {
+                    var auditTable = auditTableBuilder.BuildAuditTable(table);
+                    ScriptObjectsForTable(table, auditTable, script);
+                }
+            }
+        }
+
+        private void ScriptObjectsForTable(Table dataTable, Table auditTable, TextWriter script)
+        {
+            ScriptAuditTable(auditTable, script);
+            ScriptInsertTrigger(dataTable, auditTable, script);
+            ScriptUpdateTrigger(dataTable, auditTable, script);
+            ScriptDeleteTrigger(dataTable, auditTable, script);
+        }
+
+        private void ScriptAuditTable(Table auditTable, TextWriter script)
+        {
+            string defaultCatalog = NHibernate.Util.PropertiesHelper.GetString(NHibernate.Cfg.Environment.DefaultCatalog, cfg.Properties, null);
+            string defaultSchema = NHibernate.Util.PropertiesHelper.GetString(NHibernate.Cfg.Environment.DefaultSchema, cfg.Properties, null);
+
+            string sqlCreateString = auditTable.SqlCreateString(dialect, mapping, defaultCatalog, defaultSchema);
+
+            script.WriteLine(formatter.Format(sqlCreateString));
+
+            var comments = auditTable.SqlCommentStrings(dialect, defaultCatalog, defaultSchema);
+
+            foreach (string line in comments)
+                script.Write(formatter.Format(line));
+
+            script.WriteLine(formatter.Format(&quot;go&quot;)); // create trigger statements must in their own batch
+        }
+
+        private void ScriptInsertTrigger(Table dataTable, Table auditTable, TextWriter script)
+        {
+            ScriptTrigger(string.Format(&quot;{0}_onInsert&quot;, dataTable.Name), 
+                &quot;insert&quot;, &quot;'I'&quot;, &quot;inserted&quot;,
+                dataTable, auditTable, script);
+        }
+
+        private void ScriptUpdateTrigger(Table dataTable, Table auditTable, TextWriter script)
+        {
+            ScriptTrigger(string.Format(&quot;{0}_onUpdate&quot;, dataTable.Name),
+                &quot;update&quot;, &quot;'U'&quot;, &quot;inserted&quot;,
+                dataTable, auditTable, script);
+        }
+
+        private void ScriptDeleteTrigger(Table dataTable, Table auditTable, TextWriter script)
+        {
+            ScriptTrigger(string.Format(&quot;{0}_onDelete&quot;, dataTable.Name),
+                &quot;delete&quot;, &quot;'D'&quot;, &quot;deleted&quot;,
+                dataTable, auditTable, script);
+        }
+
+
+        /// &lt;summary&gt;
+        /// Scripts out a create trigger sql statement 
+        /// &lt;/summary&gt;
+        /// &lt;param name=&quot;triggerName&quot;&gt;The name of the trigger&lt;/param&gt;
+        /// &lt;param name=&quot;triggerOperation&quot;&gt;insert, update, or delete&lt;/param&gt;
+        /// &lt;param name=&quot;auditOperationValue&quot;&gt;Value to insert for AuditOperation field&lt;/param&gt;
+        /// &lt;param name=&quot;triggerTable&quot;&gt;The &quot;built-in&quot; trigger table with affected data - inserted or deleted&lt;/param&gt;
+        /// &lt;param name=&quot;dataTable&quot;&gt;&lt;/param&gt;
+        /// &lt;param name=&quot;auditTable&quot;&gt;&lt;/param&gt;
+        /// &lt;param name=&quot;script&quot;&gt;&lt;/param&gt;
+        private void ScriptTrigger(string triggerName, string triggerOperation,
+            string auditOperationValue, string triggerTable, 
+            Table dataTable, Table auditTable, TextWriter script)
+        {
+
+            Table trigger; // Just to calculate the name of the trigger
+            trigger = new Table(triggerName);
+            trigger.Schema = dataTable.Schema;
+            trigger.Catalog = dataTable.Catalog;
+            trigger.IsQuoted = dataTable.IsQuoted;
+
+            string dataTableName = dataTable.GetQualifiedName(dialect);
+            string auditTableName = auditTable.GetQualifiedName(dialect);
+            triggerName = trigger.GetQualifiedName(dialect);
+
+            string triggerHeading;
+            string triggerBody;
+
+            triggerHeading = string.Format(&quot;create trigger {0} on {1} for {2} as&quot;, triggerName, dataTableName, triggerOperation);
+            triggerBody = string.Format(&quot;insert into {0} select *, {1}, {2}, {3} from {4}&quot;, auditTableName, TIMESTAMP_DEFAULT, USER_DEFAULT, auditOperationValue, triggerTable);
+
+            script.Write(formatter.Format(triggerHeading));
+            script.Write(formatter.Format(&quot;set nocount on&quot;));
+            script.Write(formatter.Format(triggerBody));
+            script.WriteLine(formatter.Format(&quot;go&quot;)); // create trigger statements must in their own batch
+
+        }
+
+    }
+}</pre>
+
+<pre class="brush:csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using NHibernate.Mapping;
+
+namespace AuditLogExample
+{
+    public class AuditTableBuilder
+    {
+
+        public Table BuildAuditTable(Table dataTable)
+        {
+            Table auditTable = new Table(string.Format(&quot;Audit_{0}&quot;,dataTable.Name));
+            auditTable.Catalog = dataTable.Catalog;
+            auditTable.Schema = dataTable.Schema;
+            auditTable.IsQuoted = dataTable.IsQuoted;
+
+            foreach(Column column in dataTable.ColumnIterator)
+                CopyColumn(column, auditTable);
+
+            CopyPrimaryKey(dataTable, auditTable);
+            AddAuditColumns(auditTable);
+
+            return auditTable;
+        }
+
+        private void CopyColumn(Column sourceColumn, Table auditTable)
+        {
+            Column newColumn = (Column)sourceColumn.Clone();
+            auditTable.AddColumn(newColumn);
+        }
+
+        private void CopyPrimaryKey(Table dataTable, Table auditTable)
+        {
+            var pk = new PrimaryKey();
+            foreach (Column sourceColumn in dataTable.PrimaryKey.ColumnIterator)
+            {
+                pk.AddColumn(auditTable.Column(sourceColumn.Name));
+            }
+            auditTable.PrimaryKey = pk;
+        }
+
+        private void AddAuditColumns(Table auditTable)
+        {
+
+            Column ts = new Column(&quot;AuditTimestamp&quot;);
+            ts.SqlType = &quot;datetime&quot;;
+            ts.IsNullable = false;
+            ts.DefaultValue = AuditScripter.TIMESTAMP_DEFAULT;
+            auditTable.AddColumn(ts);
+            auditTable.PrimaryKey.AddColumn(ts);
+
+            Column user = new Column(&quot;AuditUser&quot;);
+            user.Length = 256; // system_user returns a sysname, which is really nvarchar(256)
+            user.SqlType = &quot;sysname&quot;;
+            user.IsNullable = false;
+            user.DefaultValue = AuditScripter.USER_DEFAULT;
+            auditTable.AddColumn(user);
+            auditTable.PrimaryKey.AddColumn(user);
+
+            Column op = new Column(&quot;AuditOperation&quot;);
+            op.SqlType = &quot;char&quot;;
+            op.Length = 1;
+            op.IsNullable = false;
+            auditTable.AddColumn(op);
+
+        }
+
+    }
+}</pre>
+
+<pre class="brush:csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using NHibernate.Mapping;
+
+namespace NHibernate.Mapping
+{
+    public static class TableExtensions
+    {
+
+        public static Column Column(this Table Table, string ColumnName)
+        {
+            return Table.ColumnIterator.Where(c =&gt; c.Name == ColumnName).FirstOrDefault();
+        }
+
+    }
+}</pre>
+
+<p>I have a couple of gotchas and details to explain.</p>
+
+<p>First, this works for me. I’m sure there are edge cases where everything goes horribly wrong. Please let me know when you find them.</p>
+
+<p>Next, CREATE TRIGGER commands are VERY anti-social. They refuse to share a batch with any other statements. That’s why there’s a “go” between everything. In query analyzer (or the SSMS query window now), it starts a fresh batch. </p>
+
+<p>If you know your SQL, this should look pretty simple. Pass an NHibernate configuration to the constructor of AuditScripter, then call Execute. The code loops through all of the physical tables in your configuration, first building a nearly-identical audit table, then creating the three triggers. </p>
+
+<p>The primary key of the audit table has all the fields from the primary key of your data table, plus AuditUser and AuditTimestamp. A single user cannot alter the same record in two different ways at the exact same moment. In fact, I don’t think any two users could, but I’ll let it slide. </p>
+
+<p>The code could probably be improved to automatically include some common indexes on the audit tables.</p>
+
+<p>I’m sure this is the worst possible way to generate code, but I wanted something non-tool specific. I thought about T4 templates since everyone probably has Visual Studio, but this was quicker than figuring out how to get a full NHibernate configuration in to a T4 template. </p>
+
+<h4>Expanding the idea</h4>
+
+<p>You can definitely build on this idea to generate all sorts of repetitive code based on your NHibernate schema. For instance, if you’re unlucky enough to work in a shop with one of those stored-proc crazed database Nazis, this should help quite a bit. You can use this same idea to generate thousands of CRUD stored procedures in a few minutes. </p>

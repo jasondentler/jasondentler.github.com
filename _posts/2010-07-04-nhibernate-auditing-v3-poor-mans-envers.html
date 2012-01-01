@@ -1,0 +1,34 @@
+--- 
+layout: post
+title: "NHibernate Auditing v3 \xE2\x80\x93 Poor Man\xE2\x80\x99s Envers"
+tags: 
+- NHibernate
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<p>First, let me explain the title of this post. The Hibernate folks – you know, that <a href="http://nhforge.org" target="_blank">NHibernate</a> knock off written in the Java (pronounced “ex em el”) programming language – have a project called Envers. Among other things, It audits changes to entities, then allows you to easily retrieve the entity as it was at any previous point in time. </p>  <p>Well, Simon Duduica is porting this over to .NET and NHibernate, and he’s making some AMAZING progress. On June 28th, he shared this news with us on the NH Contrib development group:</p>  <blockquote>   <p>Hi everybody,</p>    <p>I have news regarding Envers.NET. I've commited a version that works in basic tests for CUD operations, with entities that have relationships between them, also with entities that are not audited. To make things work I had to make two small modifications of NHibernate, both modifications were tested running all NHibernate unit tests and they all passed. I already sent the first modification to Fabio and the second I will send this evening. I would like to thank Tuna for helping me out with good advices when I was stuck :)</p> </blockquote>  <p>&#160;</p>  <p>So, on to the topic of this post. For <u>NHibernate 3.0 Cookbook</u>, I’ve included a section that explains how to use NHibernate to generate audit triggers. Originally, I had planned to use the code from <a href="http://jasondentler.com/blog/2009/12/generate-audit-triggers-from-nhibernate-v2/" target="_blank">my previous blog post on the topic</a>, but I didn’t like its structure. I also didn’t want to include all that plumbing code in the printed book. Instead, I’ve rewritten and contributed the “framework” code to <a href="http://code.google.com/p/unhaddins/" target="_blank">uNHAddIns</a>. The “how-to use it” is explained in the book, so I won’t explain it here.</p>  <p>Today, I was writing an integration test for this contribution, and thought the idea was worth sharing. I have a simple Cat class:</p>  <p><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="ClassDiagram1" border="0" alt="ClassDiagram1" src="http://jasondentler.com/blog/wp-content/uploads/2010/07/ClassDiagram1.png" width="163" height="143" /> </p>  <p>When I do anything to this cat, in addition to the normal INSERT, UPDATE, or DELETE, a database trigger records that action in a table called CatAudit:</p>  <p><a href="http://jasondentler.com/blog/wp-content/uploads/2010/07/image.png"><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="image" border="0" alt="image" src="http://jasondentler.com/blog/wp-content/uploads/2010/07/image_thumb.png" width="206" height="159" /></a> </p>  <p>I wanted an easy way to investigate the contents of this table to prove that my audit triggers worked. Here’s what I came up with, along with help from Jose Romaniello (@jfroma). First, I created a class to match this table:</p>  <p><a href="http://jasondentler.com/blog/wp-content/uploads/2010/07/ClassDiagram11.png"><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="ClassDiagram1" border="0" alt="ClassDiagram1" src="http://jasondentler.com/blog/wp-content/uploads/2010/07/ClassDiagram1_thumb.png" width="150" height="240" /></a> </p>  <p>Next, I mapped it, made it readonly and excluded it from hbm2ddl with this mapping:</p>  <pre class="brush:xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;hibernate-mapping xmlns=&quot;urn:nhibernate-mapping-2.2&quot;
+				   assembly=&quot;uNhAddIns.Test&quot;
+				   namespace=&quot;uNhAddIns.Test.Audit.TriggerGenerator&quot;&gt;
+  &lt;typedef class=&quot;NHibernate.Type.EnumStringType`1[[uNhAddIns.Audit.TriggerGenerator.TriggerActions, uNhAddIns]], NHibernate&quot;
+           name=&quot;triggerActions&quot; /&gt;
+  &lt;class name=&quot;CatAudit&quot; 
+         mutable=&quot;false&quot;
+         schema-action=&quot;none&quot;&gt;
+    &lt;composite-id&gt;
+      &lt;key-property name=&quot;Id&quot; /&gt;
+      &lt;key-property name=&quot;AuditUser&quot; /&gt;
+      &lt;key-property name=&quot;AuditTimestamp&quot; /&gt;
+    &lt;/composite-id&gt;
+    &lt;property name=&quot;Color&quot;/&gt;
+    &lt;property name=&quot;AuditOperation&quot; type=&quot;triggerActions&quot; /&gt;
+  &lt;/class&gt;
+	
+&lt;/hibernate-mapping&gt;</pre>
+
+<p>I made it readonly by setting mutable=&quot;false&quot; and excluded it from hbm2ddl with schema-action=&quot;none&quot;. That’s it!</p>
+
+<p>By the way, the &lt;typedef&gt; along with type=&quot;triggerActions&quot; just tells NHibernate I've stored my TriggerActions enum values as strings, not numbers.</p>

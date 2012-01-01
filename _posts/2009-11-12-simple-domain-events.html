@@ -1,0 +1,154 @@
+--- 
+layout: post
+title: Simple Domain Events
+tags: 
+- Domain Events
+- Patterns
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<p>This is my first attempt at the <a href="http://martinfowler.com/eaaDev/DomainEvent.html" target="_blank">domain event pattern</a>, so use at your own risk. A lot of this post was <strike>blatantly ripped off from</strike> inspired by <a href="http://www.udidahan.com/2009/06/14/domain-events-salvation/" target="_blank">Udi Dahan’s posts on the same subject</a>. Other bits and pieces come from around the ‘net. Sorry I’m not giving credit. At the time, I was researching a problem, not a blog post.</p>  <h4>Your Problem</h4>  <p><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; margin-left: 0px; border-left-width: 0px; margin-right: 0px" border="0" align="left" src="http://blog.lib.umn.edu/biomdoc/access_services/Lily_Tomlin_telephone_operator.jpg" width="223" height="246" />Let’s use the ever-popular “preferred customer” example. You’ve built this beautiful ecommerce application. You even implemented coupon code discounts and stuff. Customers put items in the carts, checkout, and magically get their stuff in 2 to 93.5 days. </p>  <p>Today, the sales director emails you about their new “Preferred customer” program. A preferred customer gets an automatic 2% discount on orders over $1000 (up to $20). This will be a piece of cake. You quickly write up a few new tests, slap an IsPreferred boolean property on your customer entity, and build a new order total strategy for this discount scenario. All the tests turn green. </p>  <p>Then you naively email him to ask how a customer becomes “preferred.” The sales director replies “After the 20th order over $1000, the customer automatically becomes preferred.” Simple enough. He continues “When that happens, we need to place an order for a complimentary gift basket and the sales rep needs an email about it. Also, any customer with a single order over $20,000 or two orders over $10,000 is automatically enrolled in the program. Next Tuesday, we’re meeting to discuss the new Gold preferred program. I want you there.” </p>  <p>Let’s step back and analyze what just happened here. Your beautiful application just got owned by Yet Another Tool With an MBA and you have to share oxygen with him for an hour next Tuesday. More importantly, you have a problem. Even though there are multiple ways to become a preferred customer, the customer only becomes preferred once. They only get one gift basket. Also, you need to do two entirely different actions based on the same event – place a gift basket order and send an email to the sales rep. On top of all that, there’s another mess of weird requirements in the works. How will you handle this without turning your beautiful application in to a pile of ugly hacks? Domain events. </p>  <h4>What’s is it?</h4>  <p>The domain events pattern is the code equivalent of the office gossip network. Whenever something interesting happens, the office gossip tells anyone and everyone who might care about the news. </p>  <p>You have a requirement: “When X happens, do Y1, Y2, Y3, and Y4.” X is the event. The Y’s are the resulting actions that your application should take. There may be one action. There may be 15. There may be none. It doesn’t matter really. Let’s say the event is “John B. Customer just ordered 2 widgets and a sprocket.” Obviously, one of your actions will be “Ship 2 widgets and a sprocket to John B. Customer” You’ll also want to email him a receipt of his order. If this is his first order, you’ll want to mail him a catalog and add him to the mailing list. </p>  <p>How would you handle this? Well, you could have your customer’s PlaceOrder method call the services directly. That creates all sorts of tight coupling that you don’t want. Plus the reference is going the wrong direction. You could inject the services and program to an interface, but a lot of people consider that a bad idea. Even with an interface, your entities know more than they need to about your services. </p>  <p>You’ll probably want to use domain events for this. Domain events are especially helpful when X could happen in many different places, or the Y’s change a lot. They keep your coupling down by keeping your domain blissfully ignorant.</p>  <p>The checkout code of your ecommerce site doesn’t need to know how to ship products, email receipts, or anything else. It just needs to tell some central event dispatcher – the office gossip - “Hey. John B. Customer just placed an order for 2 sprockets and a widget.”</p>  <h4>What’s the solution?</h4>  <p>Basically, if you understand Pub/Sub service bus, toss out the queue and the transactional stuff. Now you understand the layout of domain events. </p>  <p>You have a dispatcher. So that it’s easy to access from anywhere in your application, it’s a static class.</p>  <p>You also have some service that wants to know when some event happens. It tells the central dispatcher “Tell me when [particular type of event] happens.” It registers as a handler of that particular type of event.</p>  <p>Your domain tells the dispatcher “Hey! This just happened.” The dispatcher looks up the handler or handlers for that event and passes along the message. The handler(s) do some work based on the details of that event. </p>  <h4>Another Trio</h4>  <p>All of the really cool patterns have 3 parts… and singleton has thick glasses and bad acne. </p>  <ol>   <li>Events – CustomerBecomesPreferred, CustomerPlacedOrder, etc. Each of these classes will be immutable – they can’t be changed once they’re created. Even though we don’t have any common members, all of our domain events play a particular role in the application. Like Udi says in his post, define role explicitly. All of our event types will implement IDomainEvent. </li>    <li>Handlers - In Pub/Sub, these would be the subscribers. You can have multiple handlers for a single type of event. The order that these handlers execute is unknown. For this reason, your events should be immutable. Altering the state of an event during the execution of a handler could create unexpected side-effects in a subsequent handler, and the whole thing becomes a game of <a href="http://en.wikipedia.org/wiki/Chinese_whispers" target="_blank">Chinese Whispers</a>. Since handlers also play a role, we’ll have an interface for them. Each handler will implement IHandle&lt;T&gt; where T is the type of event to be handled. We’ll also define a void Handle(T Event); method so all our handlers have a common entry point for the dispatcher. </li>    <li>The dispatcher dispatches events to the various handlers. The internals can be implemented many different ways, but the result is the same. All of the event handlers are registered in the dispatcher. When the dispatcher raises an event, it gets all of the handlers for that type of event. One by one, it executes each handler’s Handle method. We’ll use a service locator internally. <a href="http://ninject.org/" target="_blank">Ninject</a> people will need to use v2.0. </li> </ol>  <p>Here’s the diagram:</p>  <p><a href="http://yuml.me/diagram/class/[&lt;&lt;IDomainEvent&gt;&gt;{bg:yellow}]^-.-[CustomerBecamePreferred|+Customer;{bg:orange}], [&lt;&lt;IHandle(T)&gt;&gt;{bg:yellow}]&lt;-&gt;[note:where T:IDomainEvent{bg:cornsilk}], [&lt;&lt;IHandle(T)&gt;&gt;]^-.-[&lt;&lt;IHandle(CustomerBecamePreferred)&gt;&gt;{bg:yellow}], [&lt;&lt;IHandle(CustomerBecamePreferred)&gt;&gt;]^-.-[SendPreferredGiftBasket|+Handle(CustomerBecamePreferred);{bg:orange}], [&lt;&lt;IHandle(CustomerBecamePreferred)&gt;&gt;]^-.-[SendMessageToSalesRep|+Handle(CustomerBecamePreferred);{bg:orange}], [Dispatcher|+Raise(T event) where T:IDomainEvent{bg:green}]." target="_blank"><img style="border-right-width: 0px; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" border="0" src="http://yuml.me/diagram/class/%5B%3C%3CIDomainEvent%3E%3E%7Bbg%3Ayellow%7D%5D%5E-.-%5BCustomerBecamePreferred%7C+Customer%3B%7Bbg%3Aorange%7D%5D%2C%20%5B%3C%3CIHandle%28T%29%3E%3E%7Bbg%3Ayellow%7D%5D%3C-%3E%5Bnote%3Awhere%20T%3AIDomainEvent%7Bbg%3Acornsilk%7D%5D%2C%20%5B%3C%3CIHandle%28T%29%3E%3E%5D%5E-.-%5B%3C%3CIHandle%28CustomerBecamePreferred%29%3E%3E%7Bbg%3Ayellow%7D%5D%2C%20%5B%3C%3CIHandle%28CustomerBecamePreferred%29%3E%3E%5D%5E-.-%5BSendPreferredGiftBasket%7C+Handle%28CustomerBecamePreferred%29%3B%7Bbg%3Aorange%7D%5D%2C%20%5B%3C%3CIHandle%28CustomerBecamePreferred%29%3E%3E%5D%5E-.-%5BSendMessageToSalesRep%7C+Handle%28CustomerBecamePreferred%29%3B%7Bbg%3Aorange%7D%5D%2C%20%5BDispatcher%7C+Raise%28T%20event%29%20where%20T%3AIDomainEvent%7Bbg%3Agreen%7D%5D" width="640" height="267" /></a></p>  <p></p>  <p>Here’s the code:</p>  <pre class="brush:csharp">namespace DomainEventsSample
+{
+    public interface IDomainEvent
+    {
+    }
+}
+
+
+namespace DomainEventsSample
+{
+    public interface IHandle&lt;T&gt; where T:IDomainEvent 
+    {
+        void Handle(T Event);
+    }
+}
+
+
+using Microsoft.Practices.ServiceLocation;
+
+namespace DomainEventsSample
+{
+    public static class Dispatcher
+    {
+
+        public static void Initialize(IServiceLocator ServiceLocator)
+        {
+            serviceLocator = ServiceLocator;
+        }
+
+        private static IServiceLocator serviceLocator;
+
+        static void Raise&lt;T&gt;(T Event) where T : IDomainEvent
+        {
+            var handlers = serviceLocator.GetAllInstances&lt;IHandle&lt;T&gt;&gt;();
+            foreach (var handler in handlers) 
+            {
+                handler.Handle(Event);
+            }
+        }
+
+    }
+}</pre>
+
+<p>In our main program, we bind some event handlers to their implementations, then make a customer order a bunch of stuff. </p>
+
+<pre class="brush:csharp">using System;
+using Ninject;
+using Microsoft.Practices.ServiceLocation;
+using CommonServiceLocator.NinjectAdapter;
+
+namespace DomainEventsSample
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            IKernel kernel = new StandardKernel();
+            IServiceLocator sl = new NinjectServiceLocator(kernel);
+            Dispatcher.Initialize(sl);
+
+            kernel.Bind&lt;IHandle&lt;CustomerPlacedOrderEvent&gt;&gt;().To&lt;ShipOrder&gt;();
+            kernel.Bind&lt;IHandle&lt;CustomerBecamePreferred&gt;&gt;().To&lt;SendPreferredGiftBasket&gt;();
+            kernel.Bind&lt;IHandle&lt;CustomerBecamePreferred&gt;&gt;().To&lt;SendMessageToSalesRep&gt;();
+
+            Customer c = new Customer();
+            for (var i = 0; i &lt; 22; i++)
+            {
+                Order newOrder = new Order(1000.00 + i);
+                c.PlaceOrder(newOrder);
+                Console.WriteLine(&quot;------------------------------------&quot;);
+            }
+            Console.ReadLine();
+
+        }
+    }
+}</pre>
+
+<p>Our events are pretty simple. They just pass along the relevant information. When the event is about something that happened to a customer, we need to know which customer. When the event is about an order, we need to know which order.</p>
+
+<pre class="brush:csharp">namespace DomainEventsSample
+{
+    public class CustomerPlacedOrder:IDomainEvent 
+    {
+
+        public CustomerPlacedOrder(Order Order)
+        {
+            order = Order;
+        }
+
+        private readonly Order order;
+
+        public Order Order
+        {
+            get
+            {
+                return order;
+            }
+        }
+
+    }
+}</pre>
+
+<p>Here’s a handler. Of course, this is just a stub for some real action you would implement. </p>
+
+<pre class="brush:csharp">using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace DomainEventsSample
+{
+    public class ShipOrder : IHandle&lt;CustomerPlacedOrderEvent&gt;
+    {
+        #region IHandle&lt;CustomerPlacedOrderEvent&gt; Members
+
+        void IHandle&lt;CustomerPlacedOrderEvent&gt;.Handle(CustomerPlacedOrderEvent Event)
+        {
+            Console.WriteLine(&quot;Shipping order totalling {0:C}&quot;,Event.Order.Total);
+        }
+
+        #endregion
+    }
+}</pre>
+
+<h4>Bidirectional Communication</h4>
+
+<p>This is the real reason I’m posting. I had a situation where a domain event handler called in to another system to do some action and the log of that action needed to make its way back to the UI. </p>
+
+<p>Just like with Pub/Sub, domain events are one way. I didn’t want to give up domain events, but I had a requirement I couldn’t fill with the pattern. So, after hacking at it for an afternoon and getting nowhere, I sent out a call for help. Ayende wrote me back. </p>
+
+<blockquote>
+  <p><font color="#000000">Publish a new event that the UI is listening to</font></p>
+</blockquote>
+
+<p>He explains in 10 words what takes me 3 paragraphs. There’s your answer folks. When your handler needs to respond, publish a response event. Simple. Elegant. </p>
+
+<h4>Gimme the Code!</h4>
+
+<p>I’m putting all of the code for this blog in SVN at <a href="http://basiclyeverything.googlecode.com/svn/trunk/" target="_blank">http://basiclyeverything.googlecode.com/svn/trunk/</a></p>
+
+<p>The code for this particular post is in <a href="http://basiclyeverything.googlecode.com/svn/trunk/DomainEventsSample" target="_blank">http://basiclyeverything.googlecode.com/svn/trunk/DomainEventsSample</a></p>

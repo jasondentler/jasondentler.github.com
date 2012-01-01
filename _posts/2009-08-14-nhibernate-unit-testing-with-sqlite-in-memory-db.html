@@ -1,0 +1,140 @@
+--- 
+layout: post
+title: NHibernate unit testing with SQLite in-memory DB
+tags: 
+- Fluent NHibernate
+- NHibernate
+- SQLite
+- Unit Testing
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<p>While doing research for my next post, I ran across a recurring problem. Everyone wanted to use an in-memory SQLite database for their <a href="http://nhforge.org" target="_blank">NHibernate</a> unit tests.</p>  <p>Evidently, there’s no way to get back to the in-memory database in it’s current state after all of the connections to that database have been closed. When you open another connection, you get a fresh blank database.</p>  <p>Here’s the solutions I found while searching around.</p>  <ul>   <li><a href="http://ayende.com/Blog/archive/2009/04/28/nhibernate-unit-testing.aspx" target="_blank">Ayende just uses a single NHibernate session</a>, which usually only uses a single SQLite DB connection. In fact, he just uses one session per test fixture. I’m not that smart and I don’t know enough about the internals of NHibernate to be confident that I’m really testing what I think I’m testing. Using a fresh session and database for each test would make me a lot more confident. </li>    <li>Krzysztof Kozmic has resorted to <a href="http://devlicio.us/blogs/krzysztof_kozmic/archive/2009/08/14/testing-with-nhibernate-and-sqlite.aspx" target="_blank">using a SQLite database stored on disk</a>. While it may be faster than blowing away and recreating a SQL Express database dozens of times, it’s still slower than using an in-memory database. Variations of this idea include storing the database on a MS-DOS 5.0-style RAM disk drive to recover some of the speed lost by using file I/O. Genius! Except, I’m not going to reconfigure my PC for a unit test. Sorry, it’s just not portable enough. That’s why the idea was rated down on Stack Overflow. </li>    <li>Someone (gotta love the anonymous bloggers!) suggested <a href="http://notepad2.wordpress.com/2008/05/19/unit-testing-castle-active-record-using-sqlite-in-memory-database/" target="_blank">building a custom NHibernate DriverConnectionProvider</a> and overriding the GetConnection and CloseConnection functions so that once opened, the connection would never be closed. This seems a bit extreme to me, and doesn’t provide a mechanism to get a fresh database when we need one. </li> </ul>  <p>Using the DriverConnectionProvider idea of maintaining a single connection, but with a controlled scope, I came up with this:</p>  <pre class="brush:vbnet">Imports FluentNHibernate.Cfg
+Imports FluentNHibernate.Cfg.Db
+Imports FluentNHibernate.Mapping
+Imports NHibernate
+Imports NHibernate.Tool.hbm2ddl
+Imports System.Data.SQLite
+
+Public Class SQLiteDatabaseScope(Of TClassFromMappingAssembly)
+    Implements IDisposable
+
+    Private Const CONNECTION_STRING As String = &quot;Data Source=:memory:;Version=3;New=True;&quot;
+
+    Public Sub New()
+        BuildConfiguration()
+    End Sub
+
+    Private m_Connection As SQLiteConnection
+    Private m_SessionFactory As ISessionFactory
+
+    Private Sub BuildConfiguration()
+        m_SessionFactory = Fluently.Configure() _
+                            .Database(GetDBConfig()) _
+                            .Mappings(AddressOf GetMappings) _
+                            .ExposeConfiguration(AddressOf BuildSchema) _
+                            .BuildSessionFactory()
+    End Sub
+
+    Private Function GetDBConfig() As FluentNHibernate.Cfg.Db.IPersistenceConfigurer
+        Return SQLiteConfiguration.Standard _
+                    .ConnectionString(Function(cs As ConnectionStringBuilder) cs.Is(CONNECTION_STRING))
+    End Function
+
+    Private Sub GetMappings(ByVal x As MappingConfiguration)
+        x.FluentMappings _
+            .AddFromAssemblyOf(Of TClassFromMappingAssembly)() _
+            .ExportTo(&quot;.&quot;)
+    End Sub
+
+    Private Sub BuildSchema(ByVal Cfg As NHibernate.Cfg.Configuration)
+        Dim SE As New SchemaExport(Cfg)
+        SE.Execute(False, True, False, GetConnection, Console.Out)
+    End Sub
+
+    Private Function GetConnection() As System.Data.SQLite.SQLiteConnection
+        If m_Connection Is Nothing Then
+            m_Connection = New SQLiteConnection(CONNECTION_STRING)
+            m_Connection.Open()
+        End If
+        Return m_Connection
+    End Function
+
+    Public Function OpenSession() As ISession
+        Return m_SessionFactory.OpenSession(GetConnection)
+    End Function
+
+    Private disposedValue As Boolean = False        ' To detect redundant calls
+
+    ' IDisposable
+    Protected Overridable Sub Dispose(ByVal disposing As Boolean)
+        If Not Me.disposedValue Then
+            If disposing Then
+                ' TODO: free other state (managed objects).
+                If m_Connection IsNot Nothing Then m_Connection.Close()
+                m_Connection = Nothing
+            End If
+
+            ' TODO: free your own state (unmanaged objects).
+            ' TODO: set large fields to null.
+        End If
+        Me.disposedValue = True
+    End Sub
+
+#Region &quot; IDisposable Support &quot;
+    ' This code added by Visual Basic to correctly implement the disposable pattern.
+    Public Sub Dispose() Implements IDisposable.Dispose
+        ' Do not change this code.  Put cleanup code in Dispose(ByVal disposing As Boolean) above.
+        Dispose(True)
+        GC.SuppressFinalize(Me)
+    End Sub
+#End Region
+
+End Class</pre>
+
+<p>It’s the same idea as the DriverConnectionProvider, but with a different scope. We create and open a connection and maintain it for the lifespan of the SQLiteDatabaseScope object. So far, I haven't found an instance where NHibernate closes the connection.</p>
+
+<p>Each instance of SQLiteDatabaseScope uses a different in-memory database, thanks to the New=True property in the connection string. You should be able to run your tests in parallel. You can’t do that with any of the other solutions.</p>
+
+<p>The generic type parameter should be set to one of your fluent mapping classes. It’s used to tell Fluent NHibernate which assembly to scan for fluent mappings.</p>
+
+<p>It’s extremely easy to use.</p>
+
+<pre class="brush:vbnet">Imports NUnit.Framework
+
+&lt;TestFixture&gt; _
+Public Class SomeNHibernateTestFixture
+
+    &lt;Test&gt;
+    Public Sub SomeNHibernateTest()
+        Using Scope As New SQLiteDatabaseScope(Of CourseMapping)
+            Using SessionOne = Scope.OpenSession
+                ' Do some stuff here...
+            End Using
+
+            Using SessionTwo = Scope.OpenSession
+                ' Do some more stuff using the same in-memory SQLite DB
+            End Using
+        End Using
+    End Sub
+
+    &lt;Test&gt;
+    Public Sub AnotherNHibernateTest()
+        Using Scope As New SQLiteDatabaseScope(Of CourseMapping)
+            Using SessionThree = Scope.OpenSession
+                ' Do some stuff here to a new, freshly-built database...
+	    End Using
+        End Using
+    End Sub
+
+End Class</pre>
+
+<p>Jason 
+  <br />- Concerned the problem is not really that simple.</p>
+
+<p>&#160;</p>
+
+<p>Download the SQLiteDatabaseScope code in <a href="http://jasondentler.com/downloads/SQLiteDatabaseScope.vb.txt" target="_blank">Visual Basic</a> or <a href="http://jasondentler.com/downloads/SQLiteDatabaseScope.cs.txt" target="_blank">C#</a>. GoDaddy doesn’t like you to download .vb or .cs files, so don’t forget to take off the .txt extension before you add it to your project. </p>

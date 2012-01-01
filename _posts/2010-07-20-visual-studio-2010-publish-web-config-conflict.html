@@ -1,0 +1,19 @@
+--- 
+layout: post
+title: Visual Studio 2010 publish / web.config conflict
+tags: 
+- ASP.NET MVC
+- Visual Studio
+status: publish
+type: post
+published: true
+meta: {}
+
+---
+<p>Yesterday, I suddenly and mysteriously started getting this error message when trying to build my ASP.NET MVC 2 application. </p>  <blockquote>   <p>It is an error to use a section registered as allowDefinition='MachineToApplication' beyond application level</p> </blockquote>  <p>It’s mysterious because I didn’t change my .configs. Double-clicking on the error took me to the &lt;authentication&gt; section of the web.config at the root of my app. It’s legal to define it there. Strange.</p>  <p>After trying a few different things, I started commenting out larger and larger chunks of my config, until it looked like this:</p>  <pre class="brush:xml">&lt;configuration&gt;&lt;!-- ... --&gt;&lt;/configuration&gt;</pre>
+
+<p>Clearly, the error message was wrong.</p>
+
+<p>As it turns out, this was my first time to build the app after using VS 2010’s Publish feature to throw it up on a server for a demo &amp; user testing. Publishing packages up the website under .objReleasePackage, and it doesn’t clean up after itself. The next time I built my application, the compiler barked because I had a web.config hidden a few layers deep under .obj with an &lt;authentication&gt; element. </p>
+
+<p>I discovered the issue when I compiled my app at the command line and saw the full path on the error message. So, kill the .obj folder after each publish, and you’ll never have this trouble.</p>

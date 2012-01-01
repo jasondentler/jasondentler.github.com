@@ -1,0 +1,170 @@
+--- 
+layout: post
+title: Generate Audit Triggers from NHibernate v2
+tags: 
+- MS SQL Server
+- NHibernate
+status: publish
+type: post
+published: true
+meta: {}
+
+---
+<p>In my <a href="http://jasondentler.com/blog/2009/12/generate-audit-triggers-from-nhibernate/" target="_blank">December 23rd post</a>, I showed you how to generate audit tables and triggers from your <a href="http://nhforge.org" target="_blank">NHibernate</a> mappings. Since then, I had an amazing conversation with <a href="http://fabiomaulo.blogspot.com/" target="_blank">Fabio Maulo</a>, NHibernate project owner, where among other things, he showed me a much better way to accomplish the same task.</p>  <p>In my last post, we used the NHibernate mapping as source data to create our script by hand. With this version, we’re going to take it a step further. When you add an IAuxilaryDatabaseObject to the mappings, it will be included in the ddl output of SchemaExport. These have no effect outside of SchemaExport. It’s a simple way to include additional items in your database setup scripts.</p>  <p>In our main program, we set up some additional columns to hold our audit data – user, timestamp, and action. These columns will be added to each audit table. Then, we use TriggerStrategy to add auxiliary database objects to our configuration.</p>  <pre class="brush:csharp">        static void AddAuditing(Configuration cfg)
+        {
+            var columns = new List&lt;auditcolumn&gt;();
+            columns.Add(new AuditColumn() {
+                Name = &quot;AuditUser&quot;,
+                SqlType = &quot;sysname&quot;, 
+                IsNullable = false, 
+                ValueFunction = delegate(TriggerActions actions) 
+                {
+                    return &quot;system_user&quot;;
+                }
+            });
+
+            columns.Add(new AuditColumn()
+            {
+                Name = &quot;AuditTimestamp&quot;,
+                Value = new SimpleValue() { TypeName = NHibernate.NHibernateUtil.DateTime.Name },
+                IsNullable = false,
+                IncludeInPrimaryKey = true,
+                ValueFunction = delegate(TriggerActions actions)
+                {
+                    return &quot;getdate()&quot;;
+                }
+            });
+
+            columns.Add(new AuditColumn()
+            {
+                Name = &quot;AuditOperation&quot;,
+                Value = new SimpleValue() { TypeName = NHibernate.NHibernateUtil.AnsiChar.Name },
+                Length = 1,
+                IsNullable = false,
+                ValueFunction = delegate(TriggerActions actions)
+                {
+                    switch (actions)
+                    {
+                        case TriggerActions.Insert:
+                            return &quot;'I'&quot;;
+                        case TriggerActions.Update:
+                            return &quot;'U'&quot;;
+                        case TriggerActions.Delete:
+                            return &quot;'D'&quot;;
+                        default:
+                            throw new ApplicationException(&quot;Triggers handling multiple event types (INSERT, UPDATE, DELETE) are unsupported. &quot;);
+                    }
+                }
+            });
+                
+
+            new NHibernate.Audit.TriggerStrategy(
+                new NHibernate.Audit.AuditTableBuilder(),
+                new NHibernate.Audit.MsSqlTriggerBuilder(), 
+                columns).Configure(cfg);
+	}</pre>
+
+<p>Trigger strategy simply hands off the work of audit table builder and trigger builder.</p>
+
+<p>Audit table builder creates an audit table object for each table already in your mapping. It is also responsible for calculating the name of each audit table. Yes, the naming should probably be pulled in to a separate class, but oh well.</p>
+
+<p>Audit table uses NHibernate's table object internally to create a duplicate of each table, plus the additional audit columns, then exposes the drop/create scripts for this table object as an IAuxilaryDatabaseObject. I've ommitted some of the name-related static below.</p>
+
+<pre class="brush:csharp">using System.Collections.Generic;
+using NHibernate.Mapping;
+
+namespace NHibernate.Mapping
+{
+    
+    public class AuditTable : AbstractAuxiliaryDatabaseObject 
+    {
+
+        public AuditTable(string Name, Table DataTable, IEnumerable&lt;AuditColumn&gt; AuditColumns)
+        {
+            dataTable = DataTable;
+            auditTable = new Table();
+            auditColumns = AuditColumns;
+            BuildAuditTable(Name);
+        }
+
+        protected readonly Table dataTable;
+        protected readonly Table auditTable;
+        protected readonly IEnumerable&lt;AuditColumn&gt; auditColumns;
+
+        protected virtual void BuildAuditTable(string Name)
+        {
+            auditTable.Catalog = dataTable.Catalog;
+            auditTable.Schema = dataTable.GetQuotedSchema();
+            auditTable.Name = Name;
+
+            foreach (Column column in dataTable.ColumnIterator)
+                CopyColumn(column);
+
+            CopyPrimaryKey(dataTable);
+
+            AddAuditColumns();
+        }
+
+        protected virtual void CopyColumn(Column column)
+        {
+            auditTable.AddColumn((Column)column.Clone());
+        }
+
+        protected virtual void CopyPrimaryKey(Table dataTable)
+        {
+            if (dataTable.PrimaryKey != null)
+            {
+                var pk = new PrimaryKey();
+                auditTable.PrimaryKey = pk;
+                foreach (Column c in dataTable.PrimaryKey.ColumnIterator)
+                {
+                    Column auditTableColumn = auditTable.ColumnIterator.WithName(c.Name);
+                    pk.AddColumn(auditTableColumn);
+                }
+            }
+            else
+            {
+                throw new System.NotSupportedException(&quot;Tables without primary keys are not supported.&quot;);
+            }
+        }
+
+        protected virtual void AddAuditColumns()
+        {
+            foreach (AuditColumn source in auditColumns)
+            {
+                Column dest = (Column)source.Clone();
+                auditTable.AddColumn(dest);
+                if (source.IncludeInPrimaryKey)
+                    auditTable.PrimaryKey.AddColumn(dest);
+            }
+        }
+
+
+        public override string SqlCreateString(NHibernate.Dialect.Dialect dialect, NHibernate.Engine.IMapping p, string defaultCatalog, string defaultSchema)
+        {
+            return auditTable.SqlCreateString(dialect, p, defaultCatalog, defaultSchema);
+        }
+
+        public override string SqlDropString(NHibernate.Dialect.Dialect dialect, string defaultCatalog, string defaultSchema)
+        {
+            return auditTable.SqlDropString(dialect, defaultCatalog, defaultSchema);
+        }
+    }
+
+}</pre>
+
+<p>That handles our audit tables. Now let’s look at the triggers.</p>
+
+<p>Abstract trigger builder builds insert, update, and delete triggers for each table. You should override BuildTriggerBody to customize the body of your trigger. I’ve created MsSqlTriggerBuilder to output my preferred trigger code. </p>
+
+<p>NHibernate dialects have no concept of triggers and lack the required strings to build a DBMS-specific CREATE TRIGGER statements. Instead, you specify a trigger type inherited from AbstractTrigger specific to your database to build the CREATE TRIGGER statement. I’ve included MsSqlTrigger.</p>
+
+<p>&#160;</p>
+
+<p><a href="http://jasondentler.com/blog/wp-content/uploads/2009/12/Triggers1.png"><img style="border-bottom: 0px; border-left: 0px; display: inline; margin-left: 0px; border-top: 0px; margin-right: 0px; border-right: 0px" title="Triggers" border="0" alt="Triggers" src="http://jasondentler.com/blog/wp-content/uploads/2009/12/Triggers_thumb1.png" width="578" height="821" /></a></p>
+
+<p>&#160;</p>
+
+<p>That’s all folks. You can grab the code from my SVN repository at <a href="http://basiclyeverything.googlecode.com/svn/trunk/AuditLogExample/">http://basiclyeverything.googlecode.com/svn/trunk/AuditLogExample/</a></p>
+
+<p>Since I’m still using the system_user function to get the current user, you will still need to impersonate the user all the way down to the database level. I’ve found a way around this, and I will show it to you next time. Until then, Happy New Year.</p>

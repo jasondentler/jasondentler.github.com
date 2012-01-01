@@ -2,6 +2,9 @@
 layout: default
 title: "Jason Dentler.com"
 ---
+<!-- 
+{{ site.posts.size }} posts found.
+-->
 {% for post in site.posts limit:5%}
 <div id="post">
 	<div class="post-date">
@@ -25,7 +28,7 @@ title: "Jason Dentler.com"
 </div>
 {% endfor %}
 
-{% if site.posts.count > 5 %}
+{% if site.posts.size > 5 %}
 <div id="post">
 	<h3>Older Posts</h3>
 	<ul id="older-posts">

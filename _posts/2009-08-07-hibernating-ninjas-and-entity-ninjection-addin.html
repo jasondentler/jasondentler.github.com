@@ -1,0 +1,59 @@
+--- 
+layout: post
+title: Hibernating Ninjas and Entity Ninjection AddIn
+tags: 
+- DI
+- IoC
+- NHibernate
+- Ninject
+- ORM
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<img class="alignright size-medium wp-image-99" title="injection" src="http://jasondentler.com/blog/wp-content/uploads/2009/08/injection-299x198.jpg" alt="injection" width="299" height="198" />As I posted before, NHibernate 2.1 allows you to <a href="http://jasondentler.com/blog/2009/08/nhibernate-2-1-released/">inject dependencies in to your entities</a> through the constructor. The idea is that when NHibernate rehydrates your object graph, it uses your favorite IoC container to inject whatever strategies and services your entities may require.
+
+The <a href="http://code.google.com/p/unhaddins/">Unofficial AddIns for NHibernate</a> project has implementations of NHibernate's IBytecodeProvider interface to do Entity DI with Castle and Spring. Using these as a template, I've written an add-in for Entity DI using Ninject v2.
+
+The code for this add-in basically falls in to two categories:
+<ol>
+	<li>Make NHibernate stop whining about parameters on the constructors.</li>
+	<li>Creating instances of entities as they are being rehydrated from the database.</li>
+</ol>
+<h3>Constructor Parameters - Oh, the humanity!</h3>
+We all know NHibernate makes a big freakin' deal out of certain things - virtual / overridable methods and properties, and parameterless constructors. When you do constructor DI, the constructor will have parameters. It's a fact.  Yes, you can inject your dependencies through properties, but don't do it. You'll spend months chasing NullReferenceExceptions.
+
+So, how do we stop NHibernate from puking on entities that don't have a parameterless constructor? Simple - We override the methods that do those checks. Thanks to some serious refactoring in NHibernate 2.1, it's all in two places.
+<ol>
+	<li>DynProxyTypeValidator's CheckHasVisibleDefaultConstructor method</li>
+	<li>ReflectionOptimizer's ThrowExceptionForNoDefaultCtor method</li>
+</ol>
+So, we sub-class those objects and override those methods to do nothing. There's some other minor plumbing. Check out ProxyFactoryFactory in the attached source.
+<h3>What's this BytecodeProvider thing anyway?</h3>
+From <a href="http://nhforge.org/blogs/nhibernate/archive/2008/12/12/entities-behavior-injection.aspx">Fabio Maulo's blog</a>:
+<blockquote>The BytecodeProvider has two responsibility: provide the ProxyFactoryFactory and provide the ReflectionOptimizer.</blockquote>
+That's exactly what we're doing.
+
+Besides providing our new ProxyTypeValidator, the ProxyFactoryFactory also returns an implementation of IProxyFactory. Since Ninject doesn't do proxies, we have to wire in a proxy generator. Well, what's a DI framework good for, if not to wire in services. IProxyFactory is fetched from the kernel. This means you can use Ninject for DI and still have your choice of proxy factories: Castle, Spring, or Linfu, so far.
+
+The reflection optimizer is responsible for creating instances of our entities as they're being rehydrated from the database. This is where we get in to the second part of code.
+<h3>Let's make some entities</h3>
+Because Ninject has automatic self-binding baked in, this part is also insanely easy. Here's the ReflectionOptimizer function where all of the magic happens:
+<pre class="brush:csharp">        public override object CreateInstance()
+        {
+                return kernel.Get(mappedType);
+        }</pre>
+That's it. Yes. Really. It's that easy.
+
+Well, not quite <strong>that</strong> easy. This changes the requirements for your entites in one very subtle and non-obvious way. In previous versions, and by default in this version, NHibernate always uses the parameterless constructor.
+
+When using the NinjectBytecodeProvider, unless you decorate your entities with the Inject attribute, the constructor with the <strong>most</strong> parameters will be used. Remember - Unless you explicitly tell it otherwise, Ninject will choose the most complicated constructor it can find, even if it can't resolve all of the dependencies.
+<h3>Great! What now?</h3>
+I've submited this code to the <a href="http://code.google.com/p/unhaddins/issues/detail?id=10">uNHAddIns project</a> and <a href="http://groups.google.com/group/ninject/browse_thread/thread/cc0b7739929217c7?hl=en">posted about it</a> in the Ninject group. Until it's posted there, you can <a href="/downloads/uNhAddIns.NinjectAdapters.zip">download it here</a>.
+
+That's all the time we have today. Tune in to my next post, where I'll show you how to build your own ASP.NET MVC project, and use this bytecode provider.
+
+Jason
+- Ninjecting entities since 2009

@@ -1,0 +1,234 @@
+--- 
+layout: post
+title: Double many-to-one?
+tags: 
+- Fluent NHibernate
+- NHibernate
+status: publish
+type: post
+published: true
+meta: {}
+
+---
+<p>I’m working on a mapping for a project at work. The entity names have been changed to protect the innocent. </p>  <p><a href="http://jasondentler.com/blog/wp-content/uploads/2009/08/ClassDiagram1.png"><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="ClassDiagram1" border="0" alt="ClassDiagram1" src="http://jasondentler.com/blog/wp-content/uploads/2009/08/ClassDiagram1_thumb.png" width="427" height="137" /></a> </p>  <p>In the application I’m working on, the model is more like glasses with a left and right lens, but I’ve simplified it. </p>  <pre class="brush:vbnet">Public Class Monocle
+    Inherits Entity
+
+    Private m_LeftLens As Lens
+
+    Public Overridable Property Lens() As Lens
+        Get
+            Return m_LeftLens
+        End Get
+        Set(ByVal value As Lens)
+            m_LeftLens = value
+        End Set
+    End Property
+
+End Class
+
+Public Class Lens
+    Inherits Entity
+
+    Private m_Glasses As Monocle
+
+    Public Overridable Property Monocle() As Monocle
+        Get
+            Return m_Glasses
+        End Get
+        Set(ByVal value As Monocle)
+            m_Glasses = value
+        End Set
+    End Property
+
+End Class
+
+Public Class MonocleMapping
+    Inherits ClassMap(Of Monocle)
+    Public Sub New()
+        Id(Function(x As Monocle) x.ID).GeneratedBy.GuidComb()
+        References(Function(x As Monocle) x.Lens) _
+            .Cascade.All() _
+            .WithForeignKey(&quot;MonocleLens&quot;)
+
+    End Sub
+End Class
+
+Public Class LensMapping
+    Inherits ClassMap(Of Lens)
+    Public Sub New()
+        Id(Function(x As Lens) x.ID).GeneratedBy.GuidComb()
+        References(Function(x As Lens) x.Monocle) _
+            .Cascade.All() _
+            .WithForeignKey(&quot;LensMonocle&quot;)
+    End Sub
+End Class
+
+&lt;TestFixture()&gt; _
+Public Class GlassesMappingTests
+
+    &lt;Test()&gt; _
+    Public Sub CanCascadeSaveFromMonocleToLens()
+        Dim ID As Guid
+        Dim Monocle As Monocle
+        Dim Lens As Lens
+        Using Scope As New SQLiteDatabaseScope(Of MonocleMapping)
+            Using Session = Scope.OpenSession
+                Using Tran = Session.BeginTransaction
+                    Monocle = New Monocle
+
+                    Lens = New Lens With {.Monocle = Monocle}
+                    Monocle.Lens = Lens
+
+                    'These are just idiot checks...
+                    Monocle.Should.Not.Be.Null()
+                    Lens.Should.Not.Be.Null()
+                    Monocle.Lens.Should.Be.SameInstanceAs(Lens)
+                    Lens.Monocle.Should.Be.SameInstanceAs(Monocle)
+
+                    ID = Session.Save(Monocle)
+                    Tran.Commit()
+                End Using
+            End Using
+
+            Using Session = Scope.OpenSession
+                Using Tran = Session.BeginTransaction
+
+                    Monocle = Session.Get(Of Monocle)(ID)
+
+                    Monocle.Should.Not.Be.Null()
+                    Monocle.ID.Should.Be.EqualTo(ID)
+
+                    Monocle.Lens.Should.Not.Be.Null()
+                    Monocle.Lens.Should.Not.Be.SameInstanceAs(Lens)
+                    Monocle.Lens.Should.Be.EqualTo(Lens)
+                    Monocle.Lens.Monocle.Should.Be.SameInstanceAs(Monocle)
+
+                    Tran.Commit()
+                End Using
+
+            End Using
+        End Using
+
+    End Sub
+
+End Class</pre>
+<pre class="brush:csharp">
+using NUnit.Framework;
+using FluentNHibernate.Mapping;
+
+public class Monocle : Entity
+{
+    
+    private Lens m_Lens;
+    
+    public virtual Lens Lens {
+        get { return m_Lens; }
+        set { m_Lens = value; }
+    }
+    
+}
+
+public class Lens : Entity
+{
+    
+    private Monocle m_Glasses;
+    
+    public virtual Monocle Monocle {
+        get { return m_Glasses; }
+        set { m_Glasses = value; }
+    }
+    
+}
+
+public class MonocleMapping : ClassMap&lt;Monocle>
+{
+    public MonocleMapping()
+    {
+        Id((Monocle x) => x.ID).GeneratedBy.GuidComb();
+            
+        References((Monocle x) => x.Lens).Cascade.All().WithForeignKey("MonocleLens");
+    }
+}
+
+public class LensMapping : ClassMap&lt;Lens>
+{
+    public LensMapping()
+    {
+        Id((Lens x) => x.ID).GeneratedBy.GuidComb();
+        References((Lens x) => x.Monocle).Cascade.All().WithForeignKey("LensMonocle");
+    }
+}
+
+[TestFixture()]
+public class GlassesMappingTests
+{
+    
+    [Test()]
+    public void CanCascadeSaveFromGlassesToLense()
+    {
+        Guid ID;
+        Monocle Monocle;
+        Lens Lens;
+        using (SQLiteDatabaseScope&lt;MonocleMapping> Scope = new SQLiteDatabaseScope&lt;MonocleMapping>()) {
+            using (Session == Scope.OpenSession()) {
+                using (Tran == Session.BeginTransaction()) {
+                    Monocle = new Monocle();
+                    
+                    Lens = new Lens { Monocle = Monocle };
+                    Monocle.Lens = Lens;
+                    
+                    //These are just idiot checks...
+                    Monocle.Should.Not.Be.Null();
+                    Lens.Should.Not.Be.Null();
+                    Monocle.Lens.Should.Be.SameInstanceAs(Lens);
+                    Lens.Monocle.Should.Be.SameInstanceAs(Monocle);
+                    
+                    ID = Session.Save(Monocle);
+                    Tran.Commit();
+                }
+            }
+            
+            using (Session == Scope.OpenSession) {
+                using (Tran == Session.BeginTransaction) {
+                    
+                    Monocle = Session.Get&lt;Monocle>(ID);
+                    
+                    Monocle.Should.Not.Be.Null();
+                    Monocle.ID.Should.Be.EqualTo(ID);
+                    
+                    Monocle.Lens.Should.Not.Be.Null();
+                    Monocle.Lens.Should.Not.Be.SameInstanceAs(Lens);
+                    Monocle.Lens.Should.Be.EqualTo(Lens);
+                    Monocle.Lens.Monocle.Should.Be.SameInstanceAs(Monocle);
+                    
+                    Tran.Commit();
+                    
+                }
+            }
+            
+        }
+    }
+    
+}
+
+</pre>
+
+<p>Here’s the resulting SQL.</p>
+
+<pre>drop table if exists &quot;Monocle&quot;
+drop table if exists &quot;Lens&quot;
+create table &quot;Monocle&quot; (ID UNIQUEIDENTIFIER not null, Lens_id UNIQUEIDENTIFIER, primary key (ID))
+create table &quot;Lens&quot; (ID UNIQUEIDENTIFIER not null, Monocle_id UNIQUEIDENTIFIER, primary key (ID))
+INSERT INTO &quot;Lens&quot; (Monocle_id, ID) VALUES (@p0, @p1); @p0 = '', @p1 = 'f6f37089-a66b-4007-b732-9c6b008d1448'
+INSERT INTO &quot;Monocle&quot; (Lens_id, ID) VALUES (@p0, @p1); @p0 = 'f6f37089-a66b-4007-b732-9c6b008d1448', @p1 = 'bb2879f6-d27a-4eb0-8bf0-9c6b008d143b'
+UPDATE &quot;Lens&quot; SET Monocle_id = @p0 WHERE ID = @p1; @p0 = 'bb2879f6-d27a-4eb0-8bf0-9c6b008d143b', @p1 = 'f6f37089-a66b-4007-b732-9c6b008d1448'
+SELECT monocle0_.ID as ID0_0_, monocle0_.Lens_id as Lens2_0_0_ FROM &quot;Monocle&quot; monocle0_ WHERE monocle0_.ID=@p0; @p0 = 'bb2879f6-d27a-4eb0-8bf0-9c6b008d143b'
+SELECT lens0_.ID as ID1_0_, lens0_.Monocle_id as Monocle2_1_0_ FROM &quot;Lens&quot; lens0_ WHERE lens0_.ID=@p0; @p0 = 'f6f37089-a66b-4007-b732-9c6b008d1448'</pre>
+
+<p>Of course, I think that making this a double many-to-one relationship is probably wrong, but it gets me close to a working solution. </p>
+
+<p>This works, except for the unnecessary UPDATE “Lens” statement. In my mind, since I’m using the GuidComb generator, NHibernate should specify the Monicle_id in the INSERT “Lens” statement. Instead, it’s inserting NULL, then updating it later. This prevents me from putting a NOT NULL constraint on Lens.Monicle_id. It’s been suggested that I have superfluous update, and I agree. However, the prescribed inverse=”true” won’t work. I don’t have a one-to-many relationship to put it on.</p>
+
+<p>I’ve tried using HasOne instead of References to create a bidirectional one-to-one relationship. It didn’t work at all. My database schema didn’t even have FK fields. </p>
+
+<p>Am I missing something or is this double many-to-one as good as it’s going to get?</p>

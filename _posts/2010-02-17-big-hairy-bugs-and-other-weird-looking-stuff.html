@@ -1,0 +1,41 @@
+--- 
+layout: post
+title: Big hairy bugs and other weird looking stuff.
+tags: []
+
+status: publish
+type: post
+published: true
+meta: {}
+
+---
+<p>Yesterday, I spent an embarrassing amount of time searching for a bug. I’m sure this is well-documented somewhere on MSDN. It even generates a compiler warning in some cases. Still, it’s not the behavior one would expect from C#.</p>  <p>When creating lambdas (including LINQ expressions) inside a for each loop, don’t use the iterator variable in your lambda. Let me explain with some code:</p>  <pre class="brush:csharp">foreach (Type controllerType in controllerTypes)
+{
+     kernel.Bind(controllerType).ToSelf().InRequestScope();
+     kernel.Bind&lt;IController&gt;().ToMethod(ctx =&gt; ctx.kernel.Get(controllerType)).Named(GetName(controllerType));
+}</pre>
+
+<p>Why am I using a method to get the controller? It just so happens that my AccountController is also a <a href="http://jasondentler.com/blog/2009/11/simple-domain-events/" target="_blank">domain event handler</a> for my AccountNameAlreadyUsed event. This goes back to Ayende's tip in my <a href="http://jasondentler.com/blog/2009/11/simple-domain-events/" target="_blank">domain events post</a>: To get a message back to the UI, fire a new event and have the UI listen for it. In this case, I need the UI to complain when the account name they selected is already being used. </p>
+
+<p>In case your mind has wandered to the dark side, throwing exceptions is not an acceptable way of passing messages in an application.</p>
+
+<p>Now, why the odd mappings? Let's say I bind IController and IHandle&lt;AccountNameAlreadyUsed&gt; to AccountController in the request scope. It doesn't quite work like you would first expect. You will have one instance of AccountController returned for IController and a separate instance for IHandle&lt;AccountNameAlreadyUsed&gt;. </p>
+
+<p>Instead, I’m saying that for each request for an IController, go get an AccountController, essentially delegating the request to the ToSelf() binding. I have a similar ToMethod() lambda binding for IHandle&lt;AccountNameAlreadyUsed&gt;. Since both interface bindings are fulfilled by the ToSelf binding, only one instance of AccountController is created for the request, instead of two.</p>
+
+<p>So, this explains why I need the lambda in the first place. Why didn’t the code above work?</p>
+
+<p>As it turns out, there was some funny business going on underneath the covers between the foreach iterator and the lambda. Here’s the symptom: No matter which “instance” of the lambda was being referenced, inside the lambda, the iterator variable (controllerType) was always the first value that was iterated. No matter which controller I requested, I always got an instance of AccountController, since it happens to be first alphabetically.</p>
+
+<p>Once you realize what’s going on, the fix is simple. Create another variable and use it inside the lambda instead. So, instead of the code above, we get this:</p>
+
+<pre class="brush:csharp">foreach (Type controllerType in controllerTypes)
+{
+     var controllerType2 = controllerType;
+     kernel.Bind(controllerType).ToSelf().InRequestScope();
+     kernel.Bind&lt;IController&gt;().ToMethod(ctx =&gt; ctx.kernel.Get(controllerType2)).Named(GetName(controllerType));
+}</pre>
+
+<p>If, instead of a lambda, we had a LINQ expression, the compiler would generate a warning about this issue – at least in VB.NET. If I hadn’t already seen that warning from LINQ expressions, I would probably still be bug hunting.</p>
+
+<p>Jason</p>

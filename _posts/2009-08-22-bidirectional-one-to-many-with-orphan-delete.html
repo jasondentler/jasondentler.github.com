@@ -1,0 +1,359 @@
+--- 
+layout: post
+title: Bidirectional One-to-many with Orphan Delete
+tags: 
+- Fluent NHibernate
+- NHibernate
+- NUnit
+status: publish
+type: post
+published: true
+meta: {}
+
+---
+<p>Here’s the full write-up on my issue from part 5. Since we’re saying all orphan children should be deleted, it seems logical that our DB schema won’t allow orphaned children, meaning Child.Parent_id should have a NOT NULL constraint. However, when I add this constraint and try to do a cascading orphan delete, <a href="http://nhforge.org" target="_blank">NHibernate</a> yells at me because I’ve set the Child.Parent to null / nothing.</p>  <p>If I remove this constraint (not good DB practice in my opinion), we see that the orphan is deleted without ever updating Child.Parent_id to NULL, so it won’t violate any database constraints, as far as I can tell.</p>  <p>Here’s the code in VB:</p>  <pre class="brush:vbnet">Imports FluentNHibernate.Mapping
+Imports NUnit.Framework
+
+Public Class Parent
+    Inherits Entity
+
+    Private m_Children As ICollection(Of Child) = New HashSet(Of Child)
+
+    Public Overridable Property Children() As ICollection(Of Child)
+        Get
+            Return m_Children
+        End Get
+        Protected Set(ByVal value As ICollection(Of Child))
+            m_Children = value
+        End Set
+    End Property
+
+End Class
+
+Public Class Child
+    Inherits Entity
+
+    Private m_Parent As Parent
+
+    Public Overridable Property Parent() As Parent
+        Get
+            Return m_Parent
+        End Get
+        Set(ByVal value As Parent)
+            m_Parent = value
+        End Set
+    End Property
+
+End Class
+
+Public Class ParentMapping
+    Inherits ClassMap(Of Parent)
+    Public Sub New()
+        Id(Function(x As Parent) x.ID).GeneratedBy.GuidComb()
+        HasMany(Function(x As Parent) x.Children) _
+            .AsSet() _
+            .WithForeignKeyConstraintName(&quot;ParentChildren&quot;) _
+            .Cascade.AllDeleteOrphan() _
+            .Inverse()
+
+    End Sub
+End Class
+
+Public Class ChildMapping
+    Inherits ClassMap(Of Child)
+    Public Sub New()
+        Id(Function(x As Child) x.ID).GeneratedBy.GuidComb()
+        References(Function(x As Child) x.Parent) _
+            .Cascade.All() _
+            .WithForeignKey(&quot;ChildParent&quot;) _
+            .Not.Nullable()
+
+    End Sub
+End Class
+
+&lt;TestFixture()&gt; _
+Public Class ParentMappingTests
+    Inherits BaseFixture
+
+    &lt;Test()&gt; _
+    Public Sub CanCascadeSaveFromParentToChild()
+        Dim ID As Guid
+        Dim P As Parent
+        Dim C As Child
+        Using Scope As New SQLiteDatabaseScope(Of ParentMapping)
+            Using Session = Scope.OpenSession
+                Using Tran = Session.BeginTransaction
+                    P = New Parent
+
+                    'Add a child of the parent
+                    C = New Child With {.Parent = P}
+                    P.Children.Add(C)
+
+                    ID = Session.Save(P)
+                    Tran.Commit()
+                End Using
+                Session.Clear()
+
+                Using Tran = Session.BeginTransaction
+
+                    P = Session.Get(Of Parent)(ID)
+
+                    Assert.IsNotNull(P)
+                    Assert.AreEqual(ID, P.ID)
+
+                    Assert.AreEqual(1, P.Children.Count)
+                    Assert.AreNotSame(C, P.Children(0))
+                    Assert.AreEqual(C, P.Children(0))
+                    Assert.AreSame(P.Children(0).Parent, P)
+
+                    Tran.Commit()
+                End Using
+
+            End Using
+        End Using
+
+    End Sub
+
+    &lt;Test()&gt; _
+    Public Sub CanDeleteOrphanFromParentToChildren()
+        Dim ID As Guid
+        Dim P As Parent
+        Dim C As Child
+        Using Scope As New SQLiteDatabaseScope(Of ParentMapping)
+            Using Session = Scope.OpenSession
+                Using Tran = Session.BeginTransaction
+                    P = New Parent
+
+                    'Add a child of the parent
+                    C = New Child With {.Parent = P}
+                    P.Children.Add(C)
+
+                    ID = Session.Save(P)
+                    Tran.Commit()
+                End Using
+                Session.Clear()
+
+                Using Tran = Session.BeginTransaction
+
+                    P = Session.Get(Of Parent)(ID)
+
+                    Assert.IsNotNull(P)
+                    Assert.AreEqual(ID, P.ID)
+
+                    Assert.AreEqual(1, P.Children.Count)
+                    Assert.AreNotSame(C, P.Children(0))
+                    Assert.AreEqual(C, P.Children(0))
+                    Assert.AreSame(P.Children(0).Parent, P)
+
+                    Tran.Commit()
+                End Using
+                Session.Clear()
+
+                'Orphan the child
+                C = P.Children(0)
+                P.Children.Remove(C)
+                C.Parent = Nothing
+
+                Using Tran = Session.BeginTransaction
+                    'Orhpaned child should be deleted
+                    Session.SaveOrUpdate(P)
+                    Tran.Commit()
+                End Using
+                Session.Clear()
+
+                Using Tran = Session.BeginTransaction
+                    P = Session.Get(Of Parent)(ID)
+
+                    Assert.AreEqual(0, P.Children.Count)
+
+                    Tran.Commit()
+                End Using
+
+            End Using
+        End Using
+    End Sub
+
+End Class</pre>
+
+<p>Here’s the code in C#:</p>
+
+<pre class="brush:csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using NHibernate;
+using FluentNHibernate.Mapping;
+using NUnit.Framework;
+
+namespace NStackExample.Data.Tests
+{
+
+    public class Parent : Entity
+    {
+
+        private ICollection&lt;Child&gt; m_Children = new HashSet&lt;Child&gt;();
+
+        public virtual ICollection&lt;Child&gt; Children
+        {
+            get { return m_Children; }
+            protected set { m_Children = value; }
+        }
+
+    }
+
+    public class Child : Entity
+    {
+
+        private Parent m_Parent;
+
+        public virtual Parent Parent
+        {
+            get { return m_Parent; }
+            set { m_Parent = value; }
+        }
+
+    }
+
+    public class ParentMapping : ClassMap&lt;Parent&gt;
+    {
+        public ParentMapping()
+        {
+            Id((Parent x) =&gt; x.ID).GeneratedBy.GuidComb();
+            HasMany((Parent x) =&gt; x.Children)
+                .AsSet()
+                .WithForeignKeyConstraintName(&quot;ParentChildren&quot;)
+                .Cascade.AllDeleteOrphan()
+                .Inverse();
+        }
+    }
+
+    public class ChildMapping : ClassMap&lt;Child&gt;
+    {
+        public ChildMapping()
+        {
+            Id((Child x) =&gt; x.ID).GeneratedBy.GuidComb();
+            References((Child x) =&gt; x.Parent)
+                .Cascade.All()
+                .WithForeignKey(&quot;ChildParent&quot;)
+                .Not.Nullable();
+        }
+    }
+
+    [TestFixture()]
+    public class ParentMappingTests
+    {
+
+        [Test()]
+        public void CanCascadeSaveFromParentToChild()
+        {
+            Guid ID;
+            Parent P;
+            Child C;
+            using (SQLiteDatabaseScope&lt;ParentMapping&gt; Scope = new SQLiteDatabaseScope&lt;ParentMapping&gt;())
+            {
+                using (ISession Session = Scope.OpenSession())
+                {
+                    using (ITransaction Tran = Session.BeginTransaction())
+                    {
+                        P = new Parent();
+
+                        //Add a child of the parent
+                        C = new Child { Parent = P };
+                        P.Children.Add(C);
+
+                        ID = (Guid) Session.Save(P);
+                        Tran.Commit();
+                    }
+                    Session.Clear();
+
+                    using (ITransaction Tran = Session.BeginTransaction())
+                    {
+
+                        P = Session.Get&lt;Parent&gt;(ID);
+
+                        Assert.IsNotNull(P);
+                        Assert.AreEqual(ID, P.ID);
+
+                        Assert.AreEqual(1, P.Children.Count);
+                        Assert.AreNotSame(C, P.Children.First());
+                        Assert.AreEqual(C.ID , P.Children.First().ID );
+                        Assert.AreSame(P.Children.First().Parent, P);
+
+                        Tran.Commit();
+
+                    }
+                }
+
+            }
+        }
+
+        [Test()]
+        public void CanDeleteOrphanFromParentToChildren()
+        {
+            Guid ID;
+            Parent P;
+            Child C;
+            using (SQLiteDatabaseScope&lt;ParentMapping&gt; Scope = new SQLiteDatabaseScope&lt;ParentMapping&gt;())
+            {
+                using (ISession Session = Scope.OpenSession())
+                {
+                    using (ITransaction Tran = Session.BeginTransaction())
+                    {
+                        P = new Parent();
+
+                        //Add a child of the parent
+                        C = new Child { Parent = P };
+                        P.Children.Add(C);
+
+                        ID = (Guid) Session.Save(P);
+                        Tran.Commit();
+                    }
+                    Session.Clear();
+
+                    using (ITransaction Tran = Session.BeginTransaction())
+                    {
+
+                        P = Session.Get&lt;Parent&gt;(ID);
+
+                        Assert.IsNotNull(P);
+                        Assert.AreEqual(ID, P.ID);
+
+                        Assert.AreEqual(1, P.Children.Count);
+                        Assert.AreNotSame(C, P.Children.First());
+                        Assert.AreEqual(C.ID, P.Children.First().ID );
+                        Assert.AreSame(P.Children.First().Parent, P);
+
+                        Tran.Commit();
+                    }
+                    Session.Clear();
+
+                    //Orphan the child
+                    C = P.Children.First();
+                    P.Children.Remove(C);
+                    C.Parent = null;
+
+                    using (ITransaction Tran = Session.BeginTransaction())
+                    {
+                        //Orhpaned child should be deleted
+                        Session.SaveOrUpdate(P);
+                        Tran.Commit();
+                    }
+                    Session.Clear();
+
+                    using (ITransaction Tran = Session.BeginTransaction())
+                    {
+                        P = Session.Get&lt;Parent&gt;(ID);
+
+                        Assert.AreEqual(0, P.Children.Count);
+
+                        Tran.Commit();
+
+                    }
+                }
+            }
+        }
+
+    }
+
+
+}</pre>

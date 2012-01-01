@@ -1,0 +1,44 @@
+--- 
+layout: post
+title: LINQ to NHibernate 1.0 released
+tags: 
+- NHibernate
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+  code_editor: ""
+  code_type: Vb
+---
+<a href="http://devlicio.us/blogs/tuna_toksoz/archive/2009/07/26/nhibernate-linq-released.aspx">Tuna Toksoz</a>, <a href="http://chadly.net/post/2009/07/27/NHibernateLinq-10-is-out-and-about.aspx">Chad Lee</a>, and <a href="http://ayende.com/Blog/archive/2009/07/26/nhibernate-linq-1.0-released.aspx">Oren Eini a.k.a Ayende</a> have released LINQ to NHibernate 1.0. This version is still based on and limited by the criteria API of NHibernate, and still part of the NHContrib project.
+
+Which one would you rather use?
+
+<pre class="brush:vbnet">
+Function Authenticate(userName As String, hashedPassword As String) As Identity
+    Dim Query = From Identity In Accounts _
+            Where Identity.UserName = userName _
+            AndAlso Identity.PasswordHash = hashedPassword
+    Return Query.FirstOrDefault
+End Function
+</pre>
+
+<pre class="brush:vbnet">
+Function Authenticate(userName As String, hashedPassword As String) As Identity
+    Dim Query = m_Session.CreateCriteria(GetType(Identity)) _
+                .Add(Expression.And( _
+                   Expression.Eq("UserName", userName), _
+                   Expression.Eq("PasswordHash", hashedPassword)) _
+                .List().Cast(Of Identity)
+    Return Query.FirstOrDefault
+End Function
+</pre>
+
+Aren't you tired of using magic strings in the criteria API?
+
+
+<a href="http://blogs.imeta.co.uk/sstrong/archive/2009/06/11/708.aspx">Steve Strong</a> has done a TON of work on the <a href="http://ayende.com/Blog/archive/2009/02/22/nhibernate-hql-ast-parser.aspx">HQL abstract syntax tree parser</a>, which is a prerequisite for the more powerful HQL version LINQ to NHibernate that will be part of the main NHibernate project, not NHContrib. His work was sponsored by <a href="http://imeta.co.uk/">iMeta</a>. The HQL AST has made it in to recently-released NHibernate 2.1, so the HQL version of LINQ to NHibernate can't be too far behind.
+
+- Jason
+LINQing like mad!

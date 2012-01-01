@@ -61,12 +61,14 @@ h3 a:hover {
 
 #main {
 	color: black;
+	width: 100%;
 }
 
 #contentwrapper {
 	float: left;
 	padding: 0;
 	margin: 0;
+	width: 100%;
 }
 
 #content {

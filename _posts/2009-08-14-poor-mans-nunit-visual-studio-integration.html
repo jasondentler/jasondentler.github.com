@@ -1,0 +1,12 @@
+--- 
+layout: post
+title: "Poor man\xE2\x80\x99s NUnit + Visual Studio integration"
+tags: []
+
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<p>In part 4 of the series on <a href="http://www.asp.net/mvc/" target="_blank">ASP.NET MVC</a> and <a href="http://nhforge.org" target="_blank">NHibernate</a>, we’ll be using NUnit. If you don’t already have some snazzy Visual Studio add-in with full NUnit integration, here’s a not-so-glitzy alternative. It’s not my idea and I’d love to give credit to the right person, but I’ve slept a lot since I first discovered this.</p>  <p>&#160;</p>  <ol>   <li>In Visual Studio, on the Tools, choose External Tools.</li>    <li>Click Add</li>    <li>Title it NUnit or something similar.</li>    <li>For the command, browse for the NUnit executable. In my case, it’s in C:Program Files (x86)NUnit 2.5.2binnet-2.0</li>    <li>For the arguments, enter this: $(ProjectDir)binDebug$(TargetName)$(TargetExt) /run</li>    <li>For the initial directory, enter this:$(ProjectDir)binDebug</li> </ol>  <p>It should look something like this:</p>  <p><a href="http://jasondentler.com/blog/wp-content/uploads/2009/08/image7.png"><img style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="image" border="0" alt="image" src="http://jasondentler.com/blog/wp-content/uploads/2009/08/image_thumb7.png" width="475" height="462" /></a></p>  <p>&#160;</p>  <p>Now, when you want to fire up NUnit, just choose it from the Tools menu. It’ll launch, load up the latest debug build of the current project, and start running the tests.</p>  <p>Of course, if you’re doing any kind of significant real-world project, especially with a team, you should really look in to snagging one of the awesome continuous integration (CI) setups out there. Every time you commit, it’ll build and test your app, send you the results, and with a little tweaking, even start a fresh pot of coffee. Oh. You are using some kind of source control, right? And it’s not Visual Source Safe, right?</p>  <p>Jason   <br />- On a blogging high</p>

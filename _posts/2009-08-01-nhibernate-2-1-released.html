@@ -1,0 +1,57 @@
+--- 
+layout: post
+title: NHibernate 2.1 released
+tags: 
+- NHibernate
+status: publish
+type: post
+published: true
+meta: 
+  _edit_last: "1"
+---
+<a href="http://ayende.com/Blog/archive/2009/07/20/nhibernate-2.1-is-out.aspx">NHibernate 2.1 is out</a>, and it has all kinds of good stuff™.
+<ul>
+	<li>You don't need parameterless constructors on your entities anymore! No more of this mess:
+<pre class="brush:vbnet">        ''' &lt;summary&gt;
+        ''' NHibernate-only. Do not use.
+        ''' &lt;/summary&gt;
+        ''' &lt;remarks&gt;&lt;/remarks&gt;
+        Public Sub New()
+        End Sub
+
+        ''' &lt;summary&gt;
+        ''' Real constructor
+        ''' &lt;/summary&gt;
+        ''' &lt;remarks&gt;&lt;/remarks&gt;
+        Public Sub New(param1 As String, param2 As Date)
+        End Sub</pre>
+</li>
+	<li>Dependency injection for entities.
+Now, just inject your services right in to the constructor of the entity, instead of having to go get them every time you call your entity's methods.<br /> This:
+<pre class="brush:vbnet">
+Public Sub New()
+End Sub
+
+Public Function ChangePassword(oldPassword As String, newPassword As String, passwordHasher As IPasswordHashService) As String
+     ' Do stuff
+End Function
+</pre>
+becomes:
+<pre class="brush:vbnet">
+Public Sub New(passwordHasher As IPasswordHashService)
+     m_PasswordHasher = passwordHasher
+End Sub
+
+Public Function ChangePassword(oldPassword As String, newPassword As String) As String
+     'Do Stuff
+End Function
+</pre>
+
+The benefit is that you don't have to inject your IPasswordHashService in to everything that calls ChangePassword.
+</li>
+<li>Finally, support for HashSet(Of T) instead of that weird little IESI implementation. Since .NET doesn't come with an ISet(Of T) interface, use ICollection(Of T).</li>
+<li>Works with new SQL 2008 data types: Date, Time, and DateTimeOffset.</li>
+</ul>
+
+- Jason
+Hibernating
