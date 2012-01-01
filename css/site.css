@@ -163,6 +163,10 @@ h3 a:hover {
 	margin: 0 0 0 -3em;
 }
 
+.post-date a {
+	text-decoration: none;
+}
+
 .datebox
 {
 	border: 1px solid #000000;
