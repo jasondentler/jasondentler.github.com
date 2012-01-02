@@ -1,5 +1,5 @@
 task :default => [:jekyll]
-task :publish => [:githubpublish]
+task :publish => [:githubpublish, :sitemap]
 
 desc "Run Jekyll"
 task :jekyll do
@@ -20,6 +20,22 @@ task :githubpublish do
 	commit
 	push
 end
+
+#usage rake sitemap, but this task will be executed automatically after deploying
+desc 'notify search engines'
+task :sitemap do
+  begin
+    require 'net/http'
+    require 'uri'
+    puts '* Pinging Google about our sitemap'
+    Net::HTTP.get('www.google.com', '/webmasters/tools/ping?sitemap=' + URI.escape('http://jasondentler.com/sitemap.xml'))
+    puts '* Pinging Bing about our sitemap'
+    Net::HTTP.get('www.bing.com', '/ping?sitemap=' + URI.escape('http://jasondentler.com/sitemap.xml'))
+  rescue LoadError
+    puts '! Could not ping Google about our sitemap, because Net::HTTP or URI could not be found.'
+  end
+end
+
 
 def clean
 	sh 'rm -rf _site'
