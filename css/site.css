@@ -258,3 +258,11 @@ h3 a:hover {
 #dsq-pagination {
 	display: none;
 }
+
+#blogroll {
+	list-style-type: none;
+}
+
+#blogroll .heading {
+	font-weight: bold;
+}
