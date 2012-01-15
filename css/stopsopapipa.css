@@ -1,0 +1,26 @@
+.sopapipa {
+	text-align:center;
+	font-family: 'Stint Ultra Condensed';
+}
+
+.sopapipa a {
+	text-decoration: underline;
+	color:#bb7711;
+}
+
+.sopapipa a:hover {
+	color:#bb5500;
+}
+
+.sopapipa p {
+	font-size:18px;
+}
+
+p.reg {
+	font-family: 'Arial';
+	letter-spacing:5px;
+}
+
+p big {
+	font-size: 40px;
+}
