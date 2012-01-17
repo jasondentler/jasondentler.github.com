@@ -2,9 +2,18 @@
 <html lang="en-us">
 <head>
    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-   <title>{{ page.title }}</title>
    <meta name="author" content="Jason Dentler" />
+   {% if page.excerpt.size %}
+   <meta name="Description" content="{{ page.excerpt }}" />
+   {% endif %}
+   {% if page.url != '/index.html' %}
+   <link rel="canonical" href="{{ site.baseurl }}{{ page.url }}" />
+   {% else %}
+   <link rel="canonical" href="{{ site.baseurl }}" />
+   {% endif %}
+   <title>{{ page.title }}</title>
    <link rel="stylesheet" href="/css/site.css" type="text/css" />
+   <link rel="stylesheet" href="/css/pygments_style.css" type="text/css" />
    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
    <script type="text/javascript" src="/scripts/jasondentler.js"></script>
    <script type="text/javascript">
