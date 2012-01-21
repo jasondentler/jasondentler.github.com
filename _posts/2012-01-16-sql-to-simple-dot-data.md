@@ -4,6 +4,8 @@ title: "SQL to Simple.Data"
 date: 2012-01-16 19:44
 excerpt: "I like Simple.Data, but I waste a lot of time translating from the SQL in my head to Simple.Data, particularly when my queries get a little weird. No more!"
 ---
+> Update: [Published to nuget as Simple.Data.RawSql with syntax improvements.](/blog/2012/01/new-and-improved-simple-dot-data-dot-rawsql-package-released/)
+
 I like Simple.Data, but I waste a lot of time translating from the SQL in my head to Simple.Data, particularly when my queries get a little weird. No more! Mark Rendle gave me a tip to bypass the query side of Simple.Data while still using the part I really like: the dynamic results. 
 
 Each query can return 3 possible results:
