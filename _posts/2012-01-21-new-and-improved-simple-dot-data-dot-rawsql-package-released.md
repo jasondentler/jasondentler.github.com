@@ -12,7 +12,7 @@ Here's a few examples. First up, querying a single row:
 <script src="https://gist.github.com/1653230.js?file=singlerow.cs">
 </script>
 
-Notice that specify the type for the `db` variable. `Database.Open` returns `dynamic`. If we left it as `dynamic` (or used `var` since `Open` returns `dynamic`), we couldn't call our `ToRow` extension method.
+Notice that we specify the type for the `db` variable. `Database.Open` returns `dynamic`. If we left it as `dynamic` (or used `var`), we couldn't call our `ToRow` extension method.
 
 To query several rows:
 
