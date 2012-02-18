@@ -3,7 +3,10 @@ layout: post
 title: "Continuous Integration: Rake, Albacore, TeamCity, Kiln, and NuGet"
 date: 2012-02-18 07:22:14 -06:00
 tags: "nuget teamcity rake albacore rake"
+excerpt: "Let's talk about Continuous Integration."
 ---
+Let's talk about Continuous Integration. 
+
 We started building a system at work. It's actually several UIs over a common domain and infrastructure, and includes refactoring and integrating a lot of legacy apps. We've split it up in to different solutions: Core & Infrastructure, Domain, Legacy, and UI.
 
 ###Rake & Albacore
