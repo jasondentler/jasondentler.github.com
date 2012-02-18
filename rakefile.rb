@@ -14,7 +14,8 @@ task :jekyll do
 	puts "Publishing to local IIS"
 	publishLocal
 	puts "To test, browse to http://localhost:81"
-	puts "Run 'rake publish' to publish to github"
+	puts "rake publish to publish to github"
+	puts "rake new_post[my-new-post] or rake new_post['my new post']"
 end
 
 desc "Publish to GitHub"
