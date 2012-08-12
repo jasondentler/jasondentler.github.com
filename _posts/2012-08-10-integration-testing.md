@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Integration Testing part 1"
+title: "Integration Testing"
 date: 2012-08-10 18:36
 tags: ["ASP.NET MVC","SpecFlow","Selenium","RavenDB"]
 ---
@@ -60,6 +60,6 @@ Before each test, we clear all the cookies.
 After each test, we check for test errors. If the test failed, we save an image of page as well as the HTML.
 
 ###What's next?
-In part 2, we dive in to the specifics of controlling RavenDB.
+In the next part of this series, we dive in to the specifics of controlling RavenDB.
 
 *None of this should be considered original work. This solution is cobbled together from bits and pieces I found scattered across the web.*

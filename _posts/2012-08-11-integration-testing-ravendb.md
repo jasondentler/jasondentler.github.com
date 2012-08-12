@@ -1,10 +1,10 @@
 ---
 layout: post
-title: "Integration Testing part 2"
-date: 2012-08-10 20:48
+title: "Integration Testing: RavenDB"
+date: 2012-08-11 9:48
 tags: ["ASP.NET MVC","SpecFlow","RavenDB"]
 ---
-In [Part 1,](../integration-testing-part-1/) I introduced the technology we'll be using to test our new website:
+In [the previous post,](../integration-testing/) I introduced the technology we'll be using to test our new website:
 
 * IIS Express 7.5
 * ASP.NET MVC 3
