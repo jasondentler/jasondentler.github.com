@@ -2,6 +2,15 @@
 layout: post
 title: "Integration Testing"
 date: 2012-08-12 07:16
+series: "Integration Testing"
+excerpt: "Ideally, we want to automatically drive the three major desktop browsers through every user story of our website, checking for a few key things:
+<ul>
+<li>Each page works for the expected states.</li>
+<li>The javascript behaves on all the major browsers.</li>
+<li>The new stuff we write doesn't break the stuff we already wrote.</li>
+ </ul>"
+--- # tags
+[SpecFlow, RavenDB, IIS Express, Selenium, ASP.NET MVC]
 ---
 ###Why?
 I'm teaching next week. The subject is how we'll write integration tests for our new ASP.NET MVC public dot com website. Since I'm going through the effort to organize my thoughts, I might as well publish it for everyone - Hanselman's limited lifetime keystrokes theorem and all.

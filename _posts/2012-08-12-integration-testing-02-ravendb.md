@@ -1,7 +1,10 @@
 ---
 layout: post
 title: "Integration Testing: RavenDB"
-date: 2012-08-12 09:16
+date: 2012-08-12 08:16
+series: "Integration Testing"
+tags: RavenDB
+excerpt: "In this part, I'll show you how we control  RavenDB."
 ---
 In [the previous post,](../integration-testing/) I introduced the technology we'll be using to test our new website:
 

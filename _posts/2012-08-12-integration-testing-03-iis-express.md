@@ -1,7 +1,10 @@
 ---
 layout: post
 title: "Integration Testing: IIS Express"
-date: 2012-08-12 08:16
+date: 2012-08-12 09:16
+series: "Integration Testing"
+tags: [IIS Express]
+excerpt: "In [the previous post,](../integration-testing-ravendb/) I showed you how we control RavenDB from our test framework. In this post, we'll set up IIS Express in much the same way."
 ---
 In [the previous post,](../integration-testing-ravendb/) I showed you how we control RavenDB from our test framework. In this post, we'll set up IIS Express in much the same way.
 
