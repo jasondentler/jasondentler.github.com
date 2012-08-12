@@ -21,7 +21,6 @@ title: "Jason Dentler.com"
 	{% if post.excerpt.size %}
 		{% capture excerpt %}{{ post.excerpt }} [Continue reading]({{ post.url }}){% endcapture %}
 		{{ excerpt | markdownify }}
-		<!--<a href="{{ post.url }}">Continue reading.</a>-->
 	{% else %}
 	<i>Sorry. No excerpt is available for this post. <a href="{{ post.url }}">Read the whole post.</a></i>
 	{% endif %}
