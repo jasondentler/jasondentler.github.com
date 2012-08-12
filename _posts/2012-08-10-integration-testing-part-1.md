@@ -39,20 +39,27 @@ Spec Flow also provides `[BeforeFeature]` and `[AfterFeature]` to run code just 
 Finally, we can run code before and after each scenario with `[BeforeScenario]` and `[AfterScenario]`. This can be limited to scenarios with a specific tag. In the example above, we only run the methods when the scenario is tagged with `@web`.
 
 ####Here's our set up:
-The test suite is run 3 times, once for each browser. 
+The entire test suite is run 3 times, once for each browser. Our CI build script will automate this and poke the browser value in to the app.config each time.
 
 #####IIS Express 7.5
-IIS Express 7.5 starts up before the first test and gets killed after the last test. The application follows along. 
-*Warning: If you use static or application-scoped objects, there is some potential for cross-contamination here.*
+IIS Express 7.5 starts up before each scenario and gets killed after. It's possible to put it in `BeforeTestRun`, but for my solution, it would sometimes hang randomly between tests. I couldn't reproduce the problem outside the automated tests.
 
 #####RavenDB
-We start up a fresh in-memory RavenDB server before each scenario, and stop it after each scenario. This cuts out most of the risk of cross-contamination of the tests while still being fast as hell. 
+We start up a fresh in-memory RavenDB instance before each test. Because we run in-memory, this is especially fast to set up and tear down.
+
+It could be even faster if we used RavenDB's reset command between tests instead of killing and relaunching the process. RavenDB tries to clear the console window, which throws a "Handle is invalid" exception with Console.Out redirected to our test runner.
 
 #####Browser
-The browser also starts up before the first test and closes after the last test. 
+The browser also starts up fresh before each test.
 
-Before each test, we browse to about:blank, close any pop up windows, and clear all the cookies. *Warning: I haven't found a way to programmatically clear the browser cache or history. This is another potential source of cross-contamination.*
+Before each test, we clear all the cookies.
+
+**Warning:** The browser cache is a potential source of cross-contamination between scenarios. With the right settings, restarting Firefox between tests will do this. I haven't found a solution for Chrome. For Internet Explorer, we can run this:
+<script src="https://gist.github.com/3319624.js?file=ClearIECache.cs"></script>
 
 After each test, we check for test errors. If the test failed, we save an image of page as well as the HTML.
 
+###What's next?
+In part 2, we dive in to the specifics of controlling RavenDB.
 
+*None of this should be considered original work. This solution is cobbled together from bits and pieces I found scattered across the web.*
