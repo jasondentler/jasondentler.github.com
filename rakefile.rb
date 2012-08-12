@@ -11,8 +11,6 @@ task :jekyll do
 	sh 'chcp 65001'
 	puts "Running Jekyll"
 	jekyll
-	puts "Publishing to local IIS"
-	publishLocal
 	puts "To test, browse to http://localhost:81"
 	puts "rake publish to publish to github"
 	puts "rake new_post[my-new-post] or rake new_post['my new post']"
@@ -82,9 +80,4 @@ end
 
 def push
 	sh 'git push'
-end
-
-def publishLocal
-	sh 'rm -r c:\\blog\\'
-	sh 'cp -r _site c:\\blog'
 end

@@ -1,8 +1,7 @@
 ---
 layout: post
 title: "Integration Testing"
-date: 2012-08-10 18:36
-tags: ["ASP.NET MVC","SpecFlow","Selenium","RavenDB"]
+date: 2012-08-12 07:16
 ---
 ###Why?
 I'm teaching next week. The subject is how we'll write integration tests for our new ASP.NET MVC public dot com website. Since I'm going through the effort to organize my thoughts, I might as well publish it for everyone - Hanselman's limited lifetime keystrokes theorem and all.
@@ -18,7 +17,7 @@ We're not checking that the pages are rendered properly. That's still entirely m
 ###How?
 Our website runs on a strict diet of IIS 7, [ASP.NET MVC](http://www.asp.net/mvc) 3, and [RavenDB](http://ravendb.net/). We need to create this infrastructure in a sterile environment for each test. Our scenarios are written in [SpecFlow](http://www.specflow.org)-flavored Gherkin. We'll use [Selenium](http://seleniumhq.org/) for driving the browser. 
 
-##Spec Flow
+###Spec Flow
 Here's an example Spec Flow feature file:
 <script src="https://gist.github.com/3319624.js?file=DisplayWidgets.feature">
 </script>
@@ -55,7 +54,8 @@ The browser also starts up fresh before each test.
 Before each test, we clear all the cookies.
 
 **Warning:** The browser cache is a potential source of cross-contamination between scenarios. With the right settings, restarting Firefox between tests will do this. I haven't found a solution for Chrome. For Internet Explorer, we can run this:
-<script src="https://gist.github.com/3319624.js?file=ClearIECache.cs"></script>
+<script src="https://gist.github.com/3319624.js?file=ClearIECache.cs">
+</script>
 
 After each test, we check for test errors. If the test failed, we save an image of page as well as the HTML.
 
@@ -63,3 +63,6 @@ After each test, we check for test errors. If the test failed, we save an image 
 In the next part of this series, we dive in to the specifics of controlling RavenDB.
 
 *None of this should be considered original work. This solution is cobbled together from bits and pieces I found scattered across the web.*
+
+<a href="https://github.com/jasondentler/SpecFlowSeleniumTraining
+"><img style="position: absolute; top: 0; right: 0; border: 0;z-index:100" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>

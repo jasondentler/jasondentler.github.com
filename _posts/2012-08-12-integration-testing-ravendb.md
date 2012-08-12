@@ -1,8 +1,7 @@
 ---
 layout: post
 title: "Integration Testing: RavenDB"
-date: 2012-08-11 9:48
-tags: ["ASP.NET MVC","SpecFlow","RavenDB"]
+date: 2012-08-12 09:16
 ---
 In [the previous post,](../integration-testing/) I introduced the technology we'll be using to test our new website:
 
@@ -17,7 +16,7 @@ In this part, I'll show you how we control  RavenDB.
 ###Raven DB command line
 We want to start up a fresh in-memory RavenDB server before each test. Lucky for us, RavenDB provides every option under the sun right on the command line. Specifically, we want to use the `/ram` command line argument to run RavenDB in memory only. 
 
-It's also important that we know which port RavenDB is using so we can connect to it. We can specify this on the command line with `--set=Raven/Port==`[port number]
+It's also important that we know which port RavenDB is using so we can connect to it. We can specify this on the command line with `--set=Raven/Port==`{port number}
 
 Opening a TcpListener on port 0 actually gets a random available port from the OS. So, to find an available port, we run this code:
 <script src="https://gist.github.com/3319958.js?file=GetRandomUnusedPort.cs"></script>
@@ -37,7 +36,12 @@ It's likely installed as a windows service, so let's just look up the directory 
 ###The magic
 Now that we have the full path to the executable and our arguments all figured out, we can run RavenDB.
 
-<script src="https://gist.github.com/3319958.js?file=StartRaven.cs"></script>
+<script src="https://gist.github.com/3319958.js?file=StartRaven.cs">
+</script>
 
 Finally, to stop raven, we have this code:
-<script src="https://gist.github.com/3319958.js?file=StopRaven.cs"></script>
+<script src="https://gist.github.com/3319958.js?file=StopRaven.cs">
+</script>
+
+<a href="https://github.com/jasondentler/SpecFlowSeleniumTraining
+"><img style="position: absolute; top: 0; right: 0; border: 0;z-index:100" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
