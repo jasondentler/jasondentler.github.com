@@ -28,7 +28,7 @@ The solution was to use a message handler instead of filters.
 <script src="https://gist.github.com/jasondentler/b9ea3d83586102eb9a67.js?file=UnitOfWorkHandler.cs">
 </script>
 
-We pass in the factory delegates to make the handler testable.
+I pass in the factory delegates to make the handler testable.
 
 #####Can't detect ambient transaction
 The standard way to detect an ambient transaction didn't work for me. `Transaction.Current` was always `null`. I suspect an issue flowing it across async / await. For now, every request gets a transaction, whether it needs it or not.
@@ -37,9 +37,9 @@ The standard way to detect an ambient transaction didn't work for me. `Transacti
 #####Still lazy loading issues
 So far, this works flawlessly when the controller actions return something other than `void`, `HttpResponseMessage` or an `IHttpActionResult`. Check out the Result Conversions box in the lower right corner of the [ASP.NET Web API 2 lifecycle poster](http://www.asp.net/media/4071077/aspnet-web-api-poster.pdf) to understand why. 
 
-If I need more control over the responses, we have to return either `HttpResponseMessage` or `IHttpActionResult`. Now the service can return more intelligent responses like custom 404 messages, descriptive 409 conflict responses, 302 redirects, etc. The drawback is that these responses aren't serialized at the same point in the request lifecycle. In fact, they aren't serialized inside the Web API stack at all. It's left up to the host. 
+If I need more control over the responses, I have to return either `HttpResponseMessage` or `IHttpActionResult`. Now the service can return more intelligent responses like custom 404 messages, descriptive 409 conflict responses, 302 redirects, etc. The drawback is that these responses aren't serialized at the same point in the request lifecycle. In fact, they aren't serialized inside the Web API stack at all. It's left up to the host. 
 
-This means our lazy loading issue continues. To fix it once and for all, we need to serialize the response content before the NHibernate session gets closed. The simplest solution I could come up with required a second message handler.
+This means my lazy loading issue continues. To fix it once and for all, I need to serialize the response content before the NHibernate session gets closed. The simplest solution I could come up with required a second message handler.
 <script src="https://gist.github.com/jasondentler/b9ea3d83586102eb9a67.js?file=SerializationHandler.cs"></script>
 
 #####Wiring it up
