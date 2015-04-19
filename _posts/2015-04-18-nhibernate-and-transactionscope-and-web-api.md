@@ -3,7 +3,7 @@ layout: post
 title: NHibernate and TransactionScope and Web API
 date: 2014-04-18 21:00:00 -06:00
 tags: "NHibernate TransactionScope WebApi"
-excerpt: ""
+excerpt: "I have a Web API project that uses NHibernate and NServiceBus, and I need them to succeed or fail together, within a business transaction."
 ---
 ###The problem
 I have a Web API project that uses NHibernate and NServiceBus, and I need them to succeed or fail together, within a business transaction. There is exactly one transaction per web request.
