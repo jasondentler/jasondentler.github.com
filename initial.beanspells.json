@@ -1,5 +1,21 @@
 [
   {
+    "name": "Acid Arrow",
+    "desc": "<p>A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. Make a ranged spell attack against the target. On a hit, the target takes 4d4 acid damage immediately and 2d4 acid damage at the end of its next turn. On a miss, the arrow splashes the target with acid for half as much of the initial damage and no damage at the end of its next turn.</p>",
+    "page": "srd",
+    "range": "90 feet",
+    "components": "V, S, M",
+    "material": "powdered rhubarb leaf and an adder’s stomach",
+    "ritual": "no",
+    "duration": "Instantaneous",
+    "concentration": "no",
+    "casting_time": "1 action",
+    "level": "2nd-level",
+    "school": "Evocation",
+    "class": "Wizard",
+    "higher_level": "<p>When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd.</p>"
+  },
+  {
     "name": "Acid Splash",
     "desc": "<p>You hurl a bubble of acid. Choose one creature within range, or choose two creatures within range that are within 5 feet of each other. A target must succeed on a dexterity saving throw or take 1d6 acid damage.</p> <p>This spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6).</p>",
     "page": "phb 211",
@@ -199,6 +215,22 @@
     "domains": "Knowledge"
   },
   {
+    "name": "Arcane Hand",
+    "desc": "<p>You create a Large hand of shimmering, translucent force in an unoccupied space that you can see within range. The hand lasts for the spell’s duration, and it moves at your command, mimicking the movements of your own hand.</p><p>The hand is an object that has AC 20 and hit points equal to your hit point maximum. If it drops to 0 hit points, the spell ends. It has a Strength of 26 (+8) and a Dexterity of 10 (+0). The hand doesn’t fill its space.</p><p>When you cast the spell and as a bonus action on your subsequent turns, you can move the hand up to 60 feet and then cause one of the following effects with it.</p><p><b>Clenched Fist</b>: The hand strikes one creature or object within 5 feet of it. Make a melee spell attack for the hand using your game statistics. On a hit, the target takes 4d8 force damage.</p><p><b>Forceful Hand</b>: The hand attempts to push a creature within 5 feet of it in a direction you choose. Make a check with the hand’s Strength contested by the Strength (Athletics) check of the target. If the target is Medium or smaller, you have advantage on the check. If you succeed, the hand pushes the target up to 5 feet plus a number of feet equal to five times your spellcasting ability modifier. The hand moves with the target to remain within 5 feet of it.</p><p><b>Grasping Hand</b>: The hand attempts to grapple a Huge or smaller creature within 5 feet of it. You use the hand’s Strength score to resolve the grapple. If the target is Medium or smaller, you have advantage on the check. While the hand is grappling the target, you can use a bonus action to have the hand crush it. When you do so, the target takes bludgeoning damage equal to 2d6 + your spellcasting ability modifier.</p><p><b>Interposing Hand</b>: The hand interposes itself between you and a creature you choose until you give the hand a different command. The hand moves to stay between you and the target, providing you with half cover against the target. The target can’t move through the hand’s space if its Strength score is less than or equal to the hand’s Strength score. If its Strength score is higher than the hand’s Strength score, the target can move toward you through the hand’s space, but that space is difficult terrain for the target.</p>",
+    "page": "srd",
+    "range": "120 feet",
+    "components": "V, S, M",
+    "material": "an eggshell and a snakeskin glove",
+    "ritual": "no",
+    "duration": "Up to 1 minute",
+    "concentration": "yes",
+    "casting_time": "1 action",
+    "level": "5th-level",
+    "school": "Evocation",
+    "class": "Wizard",
+    "higher_level": "<p>When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th.</p>"
+  },
+  {
     "name": "Arcane Lock",
     "desc": "<p>You touch a closed door, window, gate, chest, or other entryway, and it becomes locked for the duration. You and the creatures you designate when you cast this spell can open the object normally. You can also set a password that, when spoken within 5 feet of the object, suppresses this spell for 1 minute. Otherwise, it is impassable until it is broken or the spell is dispelled or suppressed. Casting knock on the object suppresses arcane lock for 10 minutes.</p><p>While affected by this spell, the object is more difficult to break or force open; the DC to break it or pick any locks on it increases by 10.</p>",
     "page": "phb 215",
@@ -212,6 +244,21 @@
     "level": "2nd-level",
     "school": "Abjuration",
     "class": "Wizard"
+  },
+  {
+    "name": "Arcane Sword",
+    "desc": "<p>You create a sword-shaped plane of force that hovers within range. It lasts for the duration.</p><p>When the sword appears, you make a melee spell attack against a target of your choice within 5 feet of the sword. On a hit, the target takes 3d10 force damage. Until the spell ends, you can use a bonus action on each of your turns to move the sword up to 20 feet to a spot you can see and repeat this attack against the same target or a different one.</p>",
+    "page": "srd",
+    "range": "60 feet",
+    "components": "V, S, M",
+    "material": "a miniature platinum sword with a grip and pommel of copper and zinc, worth 250 gp",
+    "ritual": "no",
+    "duration": "Up to 1 minute",
+    "concentration": "yes",
+    "casting_time": "1 action",
+    "level": "7th-level",
+    "school": "Evocation",
+    "class": "Bard, Wizard"
   },
   {
     "name": "Astral Projection",
@@ -1673,25 +1720,6 @@
     "class": "Sorcerer, Warlock, Wizard"
   },
   {
-    "name": "Fireball",
-    "desc": "<p>A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.</p><p>The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried.</p>",
-    "higher_level": "<p>When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.</p>",
-    "page": "phb 241",
-    "range": "150 feet",
-    "components": "V, S, M",
-    "material": "A tiny ball of bat guano and sulfur.",
-    "ritual": "no",
-    "duration": "Instantaneous",
-    "concentration": "no",
-    "casting_time": "1 action",
-    "level": "3rd-level",
-    "school": "Evocation",
-    "class": "Cleric, Sorcerer, Warlock, Wizard",
-    "archetype": "Cleric: Light<br/> Warlock: Fiend",
-    "domains": "Light",
-    "patrons": "Fiend"
-  },
-  {
     "name": "Fire Bolt",
     "desc": "<p>You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried.</p><p>This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).</p>",
     "page": "phb 242",
@@ -1735,6 +1763,25 @@
     "level": "7th-level",
     "school": "Evocation",
     "class": "Cleric, Druid, Sorcerer"
+  },
+  {
+    "name": "Fireball",
+    "desc": "<p>A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.</p><p>The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried.</p>",
+    "higher_level": "<p>When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.</p>",
+    "page": "phb 241",
+    "range": "150 feet",
+    "components": "V, S, M",
+    "material": "A tiny ball of bat guano and sulfur.",
+    "ritual": "no",
+    "duration": "Instantaneous",
+    "concentration": "no",
+    "casting_time": "1 action",
+    "level": "3rd-level",
+    "school": "Evocation",
+    "class": "Cleric, Sorcerer, Warlock, Wizard",
+    "archetype": "Cleric: Light<br/> Warlock: Fiend",
+    "domains": "Light",
+    "patrons": "Fiend"
   },
   {
     "name": "Flame Blade",
