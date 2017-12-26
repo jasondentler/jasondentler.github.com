@@ -1,0 +1,55 @@
+==================================================================
+https://keybase.io/jasondentler
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of http://jasondentler.com
+  * I am jasondentler (https://keybase.io/jasondentler) on keybase.
+  * I have a public key ASBhvVbzXe3lD-sX1Xiv4R-81laCtpLcsKzlhsqmgJm92Qo
+
+To do so, I am signing this object:
+
+{
+  "body": {
+    "key": {
+      "eldest_kid": "0120770ac973d399c6e5783e24397bbde1d5cc345dc1ea49199ceddad9b6f17b82c40a",
+      "host": "keybase.io",
+      "kid": "012061bd56f35dede50feb17d578afe11fbcd65682b692dcb0ace586caa68099bdd90a",
+      "uid": "365dc0819f791789af386e3b05526619",
+      "username": "jasondentler"
+    },
+    "merkle_root": {
+      "ctime": 1514323938,
+      "hash": "6513f048fb45c4f117c29e73ba576bbe3dbd9732c0d4ebc9b6f9a36537269be06244e6032a2da857a334622871f7035ae6df99522a1dbac36412ffa4bfed5078",
+      "hash_meta": "38f9165def5ee594d1a815327b37c21b970ba26e96cea1e2552f8b7c9a7b88a4",
+      "seqno": 1859468
+    },
+    "service": {
+      "hostname": "jasondentler.com",
+      "protocol": "http:"
+    },
+    "type": "web_service_binding",
+    "version": 1
+  },
+  "client": {
+    "name": "keybase.io go client",
+    "version": "1.0.38"
+  },
+  "ctime": 1514323984,
+  "expire_in": 504576000,
+  "prev": "6620125f2d6e19658ab0c2d247f565ca2cbba18e364cbe383c3ad089bd5e4187",
+  "seqno": 13,
+  "tag": "signature"
+}
+
+which yields the signature:
+
+hKRib2R5hqhkZXRhY2hlZMOpaGFzaF90eXBlCqNrZXnEIwEgYb1W813t5Q/rF9V4r+EfvNZWgraS3LCs5YbKpoCZvdkKp3BheWxvYWTFA0x7ImJvZHkiOnsia2V5Ijp7ImVsZGVzdF9raWQiOiIwMTIwNzcwYWM5NzNkMzk5YzZlNTc4M2UyNDM5N2JiZGUxZDVjYzM0NWRjMWVhNDkxOTljZWRkYWQ5YjZmMTdiODJjNDBhIiwiaG9zdCI6ImtleWJhc2UuaW8iLCJraWQiOiIwMTIwNjFiZDU2ZjM1ZGVkZTUwZmViMTdkNTc4YWZlMTFmYmNkNjU2ODJiNjkyZGNiMGFjZTU4NmNhYTY4MDk5YmRkOTBhIiwidWlkIjoiMzY1ZGMwODE5Zjc5MTc4OWFmMzg2ZTNiMDU1MjY2MTkiLCJ1c2VybmFtZSI6Imphc29uZGVudGxlciJ9LCJtZXJrbGVfcm9vdCI6eyJjdGltZSI6MTUxNDMyMzkzOCwiaGFzaCI6IjY1MTNmMDQ4ZmI0NWM0ZjExN2MyOWU3M2JhNTc2YmJlM2RiZDk3MzJjMGQ0ZWJjOWI2ZjlhMzY1MzcyNjliZTA2MjQ0ZTYwMzJhMmRhODU3YTMzNDYyMjg3MWY3MDM1YWU2ZGY5OTUyMmExZGJhYzM2NDEyZmZhNGJmZWQ1MDc4IiwiaGFzaF9tZXRhIjoiMzhmOTE2NWRlZjVlZTU5NGQxYTgxNTMyN2IzN2MyMWI5NzBiYTI2ZTk2Y2VhMWUyNTUyZjhiN2M5YTdiODhhNCIsInNlcW5vIjoxODU5NDY4fSwic2VydmljZSI6eyJob3N0bmFtZSI6Imphc29uZGVudGxlci5jb20iLCJwcm90b2NvbCI6Imh0dHA6In0sInR5cGUiOiJ3ZWJfc2VydmljZV9iaW5kaW5nIiwidmVyc2lvbiI6MX0sImNsaWVudCI6eyJuYW1lIjoia2V5YmFzZS5pbyBnbyBjbGllbnQiLCJ2ZXJzaW9uIjoiMS4wLjM4In0sImN0aW1lIjoxNTE0MzIzOTg0LCJleHBpcmVfaW4iOjUwNDU3NjAwMCwicHJldiI6IjY2MjAxMjVmMmQ2ZTE5NjU4YWIwYzJkMjQ3ZjU2NWNhMmNiYmExOGUzNjRjYmUzODNjM2FkMDg5YmQ1ZTQxODciLCJzZXFubyI6MTMsInRhZyI6InNpZ25hdHVyZSJ9o3NpZ8RA5vawfrrpG5fONFjvTlkc/LjHYmVWuo8F3gIaU0fWM0oO1txudaov34VicWZc0W1MJvMXGsMYBHiB7nZvnCcDB6hzaWdfdHlwZSCkaGFzaIKkdHlwZQildmFsdWXEIJlYhPyHQvVddIBohaqcbuoz31xKaQ9BmubJVGN9rPuRo3RhZ80CAqd2ZXJzaW9uAQ==
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/jasondentler
+
+==================================================================
