@@ -1,0 +1,222 @@
+<html>
+
+<body>
+
+	<table>
+		<tr>
+			<td></td>
+			<td class="label">Column</td>
+			<td class="label">Row</td>
+		</tr>
+		<tr>
+			<td class="label">Count</td>
+			<td>
+				<input type="number" id="ColumnCount" value="5" />
+			</td>
+			<td>
+				<input type="number" id="RowCount" value="10" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Size (mm)</td>
+			<td>
+				<input type="number" id="LineLength" value="50" />
+			</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="label">Spacing (mm)</td>
+			<td>
+				<input type="number" id="ColumnSpacing" value="1" />
+			</td>
+			<td>
+				<input type="number" id="RowSpacing" value="4" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Min Power (%)</td>
+			<td></td>
+			<td>
+				<input type="number" id="MinPower" value="5" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Max Power (%)</td>
+			<td></td>
+			<td>
+				<input type="number" id="MaxPower" value="100" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Min Speed (mm/min)</td>
+			<td>
+				<input type="number" id="MinSpeed" value="200" />
+			</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="label">Max Speed (mm/min)</td>
+			<td>
+				<input type="number" id="MaxSpeed" value="2000" />
+			</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="label">Min Z (mm)</td>
+			<td></td>
+			<td>
+				<input type="number" id="MinZ" value="0" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Max Z (mm)</td>
+			<td></td>
+			<td>
+				<input type="number" id="MaxZ" value="0" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Non-cutting move speed</td>
+			<td>
+				<input type="number" id="MoveSpeed" value="6000" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Max Power Value</td>
+			<td>
+				<input type="number" id="MaxPowerValue" value="255" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Laser On Command</td>
+			<td>
+				<input type="text" id="LaserOnCmd" value="M106 S%" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Laser Off Command</td>
+			<td>
+				<input type="text" id="LaserOffCmd" value="M107" />
+			</td>
+			<tr>
+	</table>
+
+	<pre id="gcode"></pre>
+
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+	 crossorigin="anonymous"></script>
+
+	<script type="text/javascript">
+
+		function objectToGCodeComment(o) {
+			return JSON.stringify(o, null, '  ').replace(/^/gm, ';');
+		}
+
+		function generateGCode() {
+			var columnCount = Number($('#ColumnCount').val());
+			var rowCount = Number($('#RowCount').val());
+			var lineLength = Number($('#LineLength').val());
+			var columnSpacing = Number($('#ColumnSpacing').val());
+			var rowSpacing = Number($('#RowSpacing').val());
+			var minPower = Number($('#MinPower').val()) / 100.0;
+			var maxPower = Number($('#MaxPower').val()) / 100.0;
+			var minSpeed = Number($('#MinSpeed').val());
+			var maxSpeed = Number($('#MaxSpeed').val());
+			var minZ = Number($('#MinZ').val());
+			var maxZ = Number($('#MaxZ').val());
+			var moveSpeed = Number($('#MoveSpeed').val());
+			var maxPowerValue = Number($('#MaxPowerValue').val());
+			var laserOnCmdTemplate = $('#LaserOnCmd').val();
+			var laserOffCmd = $('#LaserOffCmd').val();
+
+			var settings = {
+				columnCount,
+				rowCount,
+				lineLength,
+				columnSpacing,
+				rowSpacing,
+				minPower,
+				maxPower,
+				minSpeed,
+				maxSpeed,
+				minZ,
+				maxZ,
+				moveSpeed,
+				maxPowerValue,
+				laserOnCmdTemplate,
+				laserOffCmd
+			};
+
+			var maxX = 0;
+			var maxY = 0;
+
+			var gcode = [];
+			gcode.push(objectToGCodeComment(settings));
+
+			gcode.push('G90 ; Absolute positioning');
+			gcode.push('G92 X0 Y0 Z0 ; Set current location as 0,0,0')
+
+			for (var column = 0; column < columnCount; column++) {
+				gcode.push('');
+				gcode.push('; Starting column #' + (column + 1));
+
+				var speed = minSpeed + (maxSpeed - minSpeed) / (columnCount-1) * column;
+				var startX = column * (columnSpacing + lineLength);
+				var endX = startX + lineLength;
+				maxX = endX;
+
+				var columnValues = {speed, startX, endX};
+				gcode.push(objectToGCodeComment(columnValues));
+
+				for (var row = 0; row < rowCount; row++) {
+					gcode.push('; Starting cell ' + (column + 1) + ", " + (row + 1));
+					var powerPercent = minPower + (maxPower - minPower) / (rowCount-1) * row;
+					var power = powerPercent * maxPowerValue;
+					var y = row * rowSpacing;
+					var z = minZ + (maxZ - minZ) / (rowCount-1) * row;
+					var maxY = y;
+
+					var cellValues = {
+						powerPercent,
+						power,
+						y,
+						z
+					};
+
+					gcode.push(objectToGCodeComment(cellValues));
+
+					var laserOnCmd = laserOnCmdTemplate.replace(/%/g, power.toFixed(0)) + ` ; Laser ${(powerPercent*100).toFixed(0)}%`;
+					var goToStart = `G0 X${startX.toFixed(4)} Y${y.toFixed(4)} Z${z.toFixed(4)} F${moveSpeed.toFixed(0)}`;
+					var goToEnd = `G1 X${endX.toFixed(4)} Y${y.toFixed(4)} Z${z.toFixed(4)} F${speed.toFixed(0)}`;
+
+					gcode.push(goToStart + ' ; Start of line')
+					gcode.push(laserOnCmd);
+					gcode.push(goToEnd + ' ; End of line');
+					gcode.push(laserOffCmd + ' ; Laser off');
+
+					gcode.push(objectToGCodeComment({
+						maxX,
+						maxY,
+						maxXInches: maxX / 25.4,
+						maxYInches: maxY / 25.4
+					}));
+				}
+			}
+
+
+			var allGCode = gcode.join('\r\n');
+			console.log(allGCode);
+
+			$('#gcode').text(allGCode);
+
+		}
+
+		$(function () {
+			$('input').change(generateGCode);
+			generateGCode();
+		});
+	</script>
+
+</body>
+
+</html>
